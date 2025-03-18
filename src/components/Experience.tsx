@@ -1,21 +1,36 @@
-const experiences = [
-    {
-      role: "Freelance Developer",
-      company: "Upwork",
-      duration: "2024 - Present",
-      description: "Working on AI, automation, and software development projects.",
-    },
-    {
-      role: "Stock Market Analysis Enthusiast",
-      company: "Personal Research",
-      duration: "Ongoing",
-      description: "Developing AI models for stock prediction using InvestWise.",
-    },
-  ];
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
+
+export default function Footer() {
+  const { theme, systemTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   
-  export default function Experience() {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+    const currentTheme = theme === "system" ? systemTheme : theme;
+    const experiences = [
+      {
+        role: "Freelance Developer",
+        company: "Upwork",
+        duration: "2024 - Present",
+        description: "Working on AI, automation, and software development projects.",
+      },
+      {
+        role: "Stock Market Analysis Enthusiast",
+        company: "Personal Research",
+        duration: "Ongoing",
+        description: "Developing AI models for stock prediction using InvestWise.",
+      },
+    ];
+
+
     return (
-      <section id="experience" className="theme2 py-20 px-5 text-white text-center">
+      <section
+        id = "Footer"
+        className={`${mounted && currentTheme === "dark" ? "themeLight" : "theme2"}
+          py-20 px-5 text-white text-center`}>
         <h2 className="text-4xl font-bold">Experience</h2>
         <div className="mt-8 max-w-3xl mx-auto">
           {experiences.map((exp, index) => (

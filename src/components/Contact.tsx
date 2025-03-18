@@ -1,6 +1,21 @@
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
+
 export default function Contact() {
+  const { theme, systemTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+    const currentTheme = theme === "system" ? systemTheme : theme;
+
     return (
-      <section id="contact" className="theme2 py-20 px-5 text-white text-center">
+      <section
+        id = "Contact"
+        className={`${mounted && currentTheme === "dark" ? "themeLight" : "theme2"}
+          py-20 px-5 text-white text-center`}>
         <h2 className="text-4xl font-bold">Contact</h2>
         <p className="mt-5">Feel free to reach out to me!</p>
         <div className="mt-8 flex justify-center gap-4 items-center">
