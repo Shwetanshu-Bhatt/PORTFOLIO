@@ -19,8 +19,8 @@ export default function Footer() {
       },
       {
         title: "InvestWise",
-        description: "Stock market analysis using AI.",
-        link: "#",
+        description: "Stock market analysis using AI.Try clicking and opening the link",
+        link: "https://investwise-qunf.onrender.com/",
       },
       {
         title: "Haptic Hearing System",
