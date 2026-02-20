@@ -46,7 +46,7 @@ export default function Hero() {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-wrap justify-center gap-4 mb-10">
+          <div className="flex flex-wrap justify-center gap-4 mb-10 mt-10">
             <a href="#projects" className="btn-primary">
               View Projects
             </a>
@@ -56,7 +56,7 @@ export default function Hero() {
           </div>
 
           {/* Social Links */}
-          <div className="flex justify-center gap-5">
+          <div className="flex justify-center gap-5 mt-10">
             <a 
               href="https://github.com/Shwetanshu-Bhatt" 
               target="_blank" 
