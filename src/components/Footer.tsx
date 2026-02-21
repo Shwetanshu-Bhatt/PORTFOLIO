@@ -1,6 +1,6 @@
 export default function Footer() {
   return (
-    <footer className="py-8 px-6 bg-[#0a0a0f] border-t border-[#2a2a3a]">
+    <footer className="py-8 px-6 bg-[var(--bg-primary)] border-t border-[var(--border-color)]">
       <div className="container">
         <div className="flex flex-col items-center gap-4">
           {/* Social Links */}
@@ -9,7 +9,7 @@ export default function Footer() {
               href="https://github.com/Shwetanshu-Bhatt" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-[#a0a0b0] hover:text-[#f0f0f5] transition-colors p-2"
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors p-2"
               aria-label="GitHub"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -20,7 +20,7 @@ export default function Footer() {
               href="https://www.linkedin.com/in/shwetanshu-bhatt-082167257" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-[#a0a0b0] hover:text-[#f0f0f5] transition-colors p-2"
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors p-2"
               aria-label="LinkedIn"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -29,7 +29,7 @@ export default function Footer() {
             </a>
             <a 
               href="mailto:shwetanshubhatt@gmail.com" 
-              className="text-[#a0a0b0] hover:text-[#f0f0f5] transition-colors p-2"
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors p-2"
               aria-label="Email"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -38,7 +38,7 @@ export default function Footer() {
             </a>
           </div>
           
-          <p className="text-[#a0a0b0] text-sm">
+          <p className="text-[var(--text-secondary)] text-sm">
             © {new Date().getFullYear()} Shwetanshu Bhatt. All Rights Reserved.
           </p>
         </div>

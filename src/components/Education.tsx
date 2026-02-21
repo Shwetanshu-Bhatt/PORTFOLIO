@@ -39,22 +39,22 @@ export default function Education() {
           {education.map((edu, index) => (
             <div 
               key={index} 
-              className="card flex flex-col md:flex-row md:items-center gap-4"
+              className="card flex flex-col md:flex-row md:items-center gap-4 mt-2"
             >
-              <div className="flex-1">
+              <div className="flex-1 ">
                 <div className="flex items-center gap-3 mb-2">
                   <span className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                    edu.type === 'degree' ? 'bg-[#6366f1]' :
-                    edu.type === 'diploma' ? 'bg-[#8b5cf6]' :
-                    'bg-[#ec4899]'
+                    edu.type === 'degree' ? 'bg-[var(--accent-primary)]' :
+                    edu.type === 'diploma' ? 'bg-[var(--accent-secondary)]' :
+                    'bg-[var(--accent-tertiary)]'
                   }`}></span>
-                  <h3 className="text-lg font-semibold text-[#f0f0f5]">{edu.degree}</h3>
+                  <h3 className="text-lg font-semibold text-[var(--text-primary)]">{edu.degree}</h3>
                 </div>
-                <p className="text-[#a0a0b0] ml-6">{edu.institution}</p>
+                <p className="text-[var(--text-secondary)] ml-6">{edu.institution}</p>
               </div>
               <div className="text-left md:text-right ml-6 md:ml-0">
-                <span className="text-[#6366f1] font-medium block">{edu.duration}</span>
-                <p className="text-[#a0a0b0] text-sm">{edu.details}</p>
+                <span className="text-[var(--accent-primary)] font-medium block">{edu.duration}</span>
+                <p className="text-[var(--text-secondary)] text-sm">{edu.details}</p>
               </div>
             </div>
           ))}

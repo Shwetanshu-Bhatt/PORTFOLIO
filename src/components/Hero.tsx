@@ -5,16 +5,16 @@ export default function Hero() {
     <section id="hero" className="py-20 px-6 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[20%] left-[20%] w-64 h-64 bg-[#6366f1]/15 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-[20%] right-[20%] w-80 h-80 bg-[#8b5cf6]/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#ec4899]/5 rounded-full blur-3xl"></div>
+        <div className="absolute top-[20%] left-[20%] w-64 h-64 bg-[var(--accent-primary)]/15 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-[20%] right-[20%] w-80 h-80 bg-[var(--accent-secondary)]/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[var(--accent-tertiary)]/5 rounded-full blur-3xl"></div>
       </div>
 
       <div className="container relative z-10">
         <div className="flex flex-col items-center text-center">
           {/* Profile Image with glow effect */}
           <div className="mb-8 animate-float">
-            <div className="w-36 h-36 md:w-44 md:h-44 rounded-full overflow-hidden border-4 border-[#6366f1] shadow-[0_0_40px_rgba(99,102,241,0.4)]">
+            <div className="w-36 h-36 md:w-44 md:h-44 rounded-full overflow-hidden border-4 border-[var(--accent-primary)] shadow-[0_0_40px_rgba(99,102,241,0.4)]">
               <Image
                 src="/Shwetanshu.png"
                 alt="Shwetanshu Bhatt"
@@ -32,16 +32,16 @@ export default function Hero() {
           </h1>
 
           {/* Title */}
-          <p className="text-lg md:text-xl text-[#a0a0b0] mb-5 font-medium flex flex-wrap justify-center gap-2">
-            <span className="text-[#6366f1]">Backend Developer</span>
-            <span className="text-[#a0a0b0]">|</span>
-            <span className="text-[#8b5cf6]">AI Systems</span>
-            <span className="text-[#a0a0b0]">|</span>
-            <span className="text-[#ec4899]">Python</span>
+          <p className="text-lg md:text-xl text-[var(--text-secondary)] mb-5 font-medium flex flex-wrap justify-center gap-2">
+            <span className="text-[var(--accent-primary)]">Backend Developer</span>
+            <span className="text-[var(--text-secondary)]">|</span>
+            <span className="text-[var(--accent-secondary)]">AI Systems</span>
+            <span className="text-[var(--text-secondary)]">|</span>
+            <span className="text-[var(--accent-tertiary)]">Python</span>
           </p>
 
           {/* Description */}
-          <p className="text-base md:text-lg text-[#a0a0b0] max-w-2xl mx-auto leading-relaxed mb-10">
+          <p className="text-base md:text-lg text-[var(--text-secondary)] max-w-2xl mx-auto leading-relaxed mb-10">
             Building production-scale AI-integrated backend systems. Reduced operational costs by 95% and generation time by 90% with fault-tolerant architectures.
           </p>
 
@@ -61,7 +61,7 @@ export default function Hero() {
               href="https://github.com/Shwetanshu-Bhatt" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-[#a0a0b0] hover:text-[#f0f0f5] transition-colors p-2"
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors p-2"
               aria-label="GitHub"
             >
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -72,7 +72,7 @@ export default function Hero() {
               href="https://www.linkedin.com/in/shwetanshu-bhatt-082167257" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-[#a0a0b0] hover:text-[#f0f0f5] transition-colors p-2"
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors p-2"
               aria-label="LinkedIn"
             >
               <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -81,7 +81,7 @@ export default function Hero() {
             </a>
             <a 
               href="mailto:shwetanshubhatt@gmail.com" 
-              className="text-[#a0a0b0] hover:text-[#f0f0f5] transition-colors p-2"
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors p-2"
               aria-label="Email"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,7 +94,7 @@ export default function Hero() {
 
       {/* Scroll indicator */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-        <svg className="w-6 h-6 text-[#a0a0b0]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6 text-[var(--text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
         </svg>
       </div>

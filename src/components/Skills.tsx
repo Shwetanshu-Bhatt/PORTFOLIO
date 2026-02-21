@@ -3,32 +3,32 @@ export default function Skills() {
     {
       title: "Languages",
       skills: ["Python", "JavaScript", "C++"],
-      color: "#6366f1"
+      color: "var(--accent-primary)"
     },
     {
       title: "Backend",
       skills: ["PostgreSQL", "REST APIs", "Database Design", "Concurrency Control"],
-      color: "#8b5cf6"
+      color: "var(--accent-secondary)"
     },
     {
       title: "AI Systems",
       skills: ["OpenAI API", "Groq API", "Gemini API", "Prompt Engineering", "AI Integration"],
-      color: "#ec4899"
+      color: "var(--accent-tertiary)"
     },
     {
       title: "Web",
       skills: ["Next.js", "Tailwind CSS"],
-      color: "#6366f1"
+      color: "var(--accent-primary)"
     },
     {
       title: "Tools",
       skills: ["Git", "Linux", "Docker"],
-      color: "#8b5cf6"
+      color: "var(--accent-secondary)"
     },
     {
       title: "Core CS",
       skills: ["Data Structures", "Algorithms", "System Design"],
-      color: "#ec4899"
+      color: "var(--accent-tertiary)"
     }
   ];
 
@@ -36,7 +36,7 @@ export default function Skills() {
     <section id="Skills" className="py-24 px-6">
       <div className="container">
         <h2 className="section-title mb-2">Skills</h2>
-        <p className="text-[#a0a0b0] text-center mb-12 max-w-2xl mx-auto">
+        <p className="text-[var(--text-secondary)] text-center mb-12 max-w-2xl mx-auto">
           A comprehensive toolkit built for building robust, scalable backend systems
         </p>
         
