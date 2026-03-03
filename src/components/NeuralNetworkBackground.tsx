@@ -33,27 +33,26 @@ export default function NeuralNetworkBackground() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    let lastWidth = 0;
+    let lastHeight = 0;
+
     // Set canvas size to cover full page
     const setCanvasSize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = document.documentElement.scrollHeight;
+      const newWidth = window.innerWidth;
+      const newHeight = document.documentElement.scrollHeight;
+      
+      // Only update if size changed significantly (more than 50px)
+      if (Math.abs(newWidth - lastWidth) > 50 || Math.abs(newHeight - lastHeight) > 50) {
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        lastWidth = newWidth;
+        lastHeight = newHeight;
+        
+        // Re-initialize nodes when canvas size changes
+        initNodes();
+      }
     };
     
-    setCanvasSize();
-    window.addEventListener('resize', setCanvasSize);
-
-    // Check current theme
-    const updateTheme = () => {
-      const isDark = !document.documentElement.hasAttribute('data-theme') || 
-                     document.documentElement.getAttribute('data-theme') === 'dark';
-      themeRef.current = isDark ? 'dark' : 'light';
-    };
-    updateTheme();
-
-    // Watch for theme changes
-    const observer = new MutationObserver(updateTheme);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-
     // Initialize nodes - random positions (20% fewer)
     const initNodes = () => {
       const nodes: Node[] = [];
@@ -71,8 +70,25 @@ export default function NeuralNetworkBackground() {
       }
       
       nodesRef.current = nodes;
+      // Clear pulses when nodes are re-initialized to prevent invalid references
+      pulsesRef.current = [];
     };
-    initNodes();
+    
+    // Initial setup
+    setCanvasSize();
+    window.addEventListener('resize', setCanvasSize);
+
+    // Check current theme
+    const updateTheme = () => {
+      const isDark = !document.documentElement.hasAttribute('data-theme') ||
+                     document.documentElement.getAttribute('data-theme') === 'dark';
+      themeRef.current = isDark ? 'dark' : 'light';
+    };
+    updateTheme();
+
+    // Watch for theme changes
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
     // Track mouse - account for scroll position since nodes are positioned absolutely
     const handleMouseMove = (e: MouseEvent) => {
@@ -196,6 +212,9 @@ export default function NeuralNetworkBackground() {
         
         const from = nodes[pulse.from];
         const to = nodes[pulse.to];
+        
+        // Safety check - skip if nodes don't exist
+        if (!from || !to) return false;
         
         const x = from.x + (to.x - from.x) * pulse.progress;
         const y = from.y + (to.y - from.y) * pulse.progress;
