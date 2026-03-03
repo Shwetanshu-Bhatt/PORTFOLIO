@@ -36,10 +36,10 @@ export default function NeuralNetworkBackground() {
     let lastWidth = 0;
     let lastHeight = 0;
 
-    // Set canvas size to cover full page
+    // Set canvas size to cover viewport only (not full scrollable page)
     const setCanvasSize = () => {
       const newWidth = window.innerWidth;
-      const newHeight = document.documentElement.scrollHeight;
+      const newHeight = window.innerHeight;
       
       // Only update if size changed significantly (more than 50px)
       if (Math.abs(newWidth - lastWidth) > 50 || Math.abs(newHeight - lastHeight) > 50) {
@@ -90,11 +90,11 @@ export default function NeuralNetworkBackground() {
     const observer = new MutationObserver(updateTheme);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-    // Track mouse - account for scroll position since nodes are positioned absolutely
+    // Track mouse - viewport coordinates only (fixed canvas)
     const handleMouseMove = (e: MouseEvent) => {
       mouseRef.current = { 
         x: e.clientX, 
-        y: e.clientY + window.scrollY 
+        y: e.clientY 
       };
     };
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
@@ -266,9 +266,11 @@ export default function NeuralNetworkBackground() {
     <canvas
       ref={canvasRef}
       style={{ 
-        position: 'absolute',
+        position: 'fixed',
         top: 0,
         left: 0,
+        width: '100vw',
+        height: '100vh',
         opacity: 1,
         pointerEvents: 'none',
         zIndex: 0,
