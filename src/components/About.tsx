@@ -1,6 +1,6 @@
 export default function About() {
   return (
-    <section id="About" className="py-24 px-6 bg-[var(--bg-primary)]">
+    <section id="About" className="py-24 px-6">
       <div className="container">
         <h2 className="section-title mb-3">About Me</h2>
         
@@ -21,15 +21,15 @@ export default function About() {
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-            <div className="text-center p-4 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)]">
+            <div className="text-center p-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]/50 backdrop-blur-sm transition-all duration-300 hover:border-[var(--accent-primary)]/30 hover:bg-[var(--bg-primary)]/80">
               <div className="text-3xl font-bold gradient-text">95%</div>
               <div className="text-sm text-[var(--text-secondary)] mt-1">Cost Reduction</div>
             </div>
-            <div className="text-center p-4 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)]">
+            <div className="text-center p-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]/50 backdrop-blur-sm transition-all duration-300 hover:border-[var(--accent-primary)]/30 hover:bg-[var(--bg-primary)]/80">
               <div className="text-3xl font-bold gradient-text">90%</div>
               <div className="text-sm text-[var(--text-secondary)] mt-1">Time Reduction</div>
             </div>
-            <div className="text-center p-4 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-color)]">
+            <div className="text-center p-4 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]/50 backdrop-blur-sm transition-all duration-300 hover:border-[var(--accent-primary)]/30 hover:bg-[var(--bg-primary)]/80">
               <div className="text-3xl font-bold gradient-text">3+</div>
               <div className="text-sm text-[var(--text-secondary)] mt-1">AI Providers</div>
             </div>

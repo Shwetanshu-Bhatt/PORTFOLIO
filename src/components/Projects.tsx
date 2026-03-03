@@ -24,7 +24,7 @@ export default function Projects() {
   ];
 
   return (
-    <section id="Projects" className="py-24 px-6 bg-[var(--bg-primary)]">
+    <section id="Projects" className="py-24 px-6">
       <div className="container">
         <h2 className="section-title mb-2">Projects</h2>
         <p className="text-[var(--text-secondary)] text-center mb-12 max-w-2xl mx-auto">
@@ -36,13 +36,13 @@ export default function Projects() {
             <a 
               key={index} 
               href={project.link}
-              className="card block group h-full"
+              className="card block group h-full flex flex-col"
             >
-              <h3 className="text-xl font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors">
+              <h3 className="text-xl font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors duration-300">
                 {project.title}
               </h3>
               
-              <p className="text-[var(--text-secondary)] mt-3 mb-4 text-sm leading-relaxed">
+              <p className="text-[var(--text-secondary)] mt-3 mb-4 text-sm leading-relaxed flex-grow">
                 {project.description}
               </p>
               
@@ -50,7 +50,7 @@ export default function Projects() {
                 {project.tech.map((t, tIndex) => (
                   <span 
                     key={tIndex}
-                    className="text-xs px-2 py-1 bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] rounded"
+                    className="text-xs px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-primary)]/50 text-[var(--text-secondary)] transition-all duration-300 group-hover:border-[var(--accent-primary)]/30 group-hover:text-[var(--text-primary)]"
                   >
                     {t}
                   </span>
@@ -62,7 +62,7 @@ export default function Projects() {
                   {project.stats.map((stat, sIndex) => (
                     <span 
                       key={sIndex}
-                      className="text-xs px-2 py-1 bg-[var(--accent-tertiary)]/10 text-[var(--accent-tertiary)] rounded"
+                      className="text-xs px-2 py-1 rounded bg-[var(--accent-tertiary)]/10 text-[var(--accent-tertiary)] border border-[var(--accent-tertiary)]/20"
                     >
                       {stat}
                     </span>
@@ -70,9 +70,9 @@ export default function Projects() {
                 </div>
               )}
               
-              <div className="mt-4 flex items-center text-[var(--accent-primary)] text-sm font-medium">
+              <div className="mt-4 flex items-center text-[var(--accent-primary)] text-sm font-medium group-hover:gap-2 transition-all duration-300">
                 View Project 
-                <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </div>

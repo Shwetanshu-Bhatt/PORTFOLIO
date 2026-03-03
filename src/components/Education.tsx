@@ -30,6 +30,17 @@ export default function Education() {
     }
   ];
 
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'degree':
+        return 'bg-[var(--accent-primary)]';
+      case 'diploma':
+        return 'bg-[var(--accent-secondary)]';
+      default:
+        return 'bg-[var(--accent-tertiary)]';
+    }
+  };
+
   return (
     <section id="Education" className="py-24 px-6">
       <div className="container">
@@ -39,22 +50,20 @@ export default function Education() {
           {education.map((edu, index) => (
             <div 
               key={index} 
-              className="card flex flex-col md:flex-row md:items-center gap-4 mt-2"
+              className="card flex flex-col md:flex-row md:items-center gap-4 group"
             >
-              <div className="flex-1 ">
+              <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <span className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                    edu.type === 'degree' ? 'bg-[var(--accent-primary)]' :
-                    edu.type === 'diploma' ? 'bg-[var(--accent-secondary)]' :
-                    'bg-[var(--accent-tertiary)]'
-                  }`}></span>
-                  <h3 className="text-lg font-semibold text-[var(--text-primary)]">{edu.degree}</h3>
+                  <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${getTypeColor(edu.type)} shadow-[0_0_8px_currentColor]`}></span>
+                  <h3 className="text-lg font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors duration-300">
+                    {edu.degree}
+                  </h3>
                 </div>
-                <p className="text-[var(--text-secondary)] ml-6">{edu.institution}</p>
+                <p className="text-[var(--text-secondary)] ml-6 text-sm">{edu.institution}</p>
               </div>
               <div className="text-left md:text-right ml-6 md:ml-0">
-                <span className="text-[var(--accent-primary)] font-medium block">{edu.duration}</span>
-                <p className="text-[var(--text-secondary)] text-sm">{edu.details}</p>
+                <span className="text-[var(--accent-primary)] font-medium text-sm block">{edu.duration}</span>
+                <p className="text-[var(--text-secondary)] text-xs mt-0.5">{edu.details}</p>
               </div>
             </div>
           ))}

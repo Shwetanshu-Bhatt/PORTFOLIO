@@ -44,11 +44,14 @@ export default function Skills() {
           {skillCategories.map((category, index) => (
             <div 
               key={index} 
-              className="card"
-              style={{ borderColor: `${category.color}30` }}
+              className="card group"
+              style={{ 
+                borderColor: `${category.color}20`,
+                animationDelay: `${index * 0.1}s`
+              }}
             >
               <h3 
-                className="text-lg font-semibold mb-4"
+                className="text-lg font-semibold mb-4 transition-colors duration-300"
                 style={{ color: category.color }}
               >
                 {category.title}
@@ -58,6 +61,10 @@ export default function Skills() {
                   <span 
                     key={skillIndex} 
                     className="skill-tag"
+                    style={{ 
+                      animationDelay: `${(index * 0.5) + (skillIndex * 0.1)}s`,
+                      borderColor: `${category.color}30`
+                    }}
                   >
                     {skill}
                   </span>
