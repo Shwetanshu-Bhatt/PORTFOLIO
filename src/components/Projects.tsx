@@ -8,7 +8,7 @@ export default function Projects() {
       stats: ["95% Cost Reduction", "90% Time Reduction"]
     },
     {
-      title: "AI Stock Price Predictor",
+      title: "AI Stock Price Predictor Demo",
       description: "Machine learning model that predicts next-day open and close stock prices using historical OHLCV market data. Features data preprocessing, feature scaling, and model evaluation with MAE/RMSE metrics.",
       tech: ["Python", "Pandas", "Scikit-Learn", "Linear Regression", "Financial Data Analysis"],
       link: "https://investwise-qunf.onrender.com/",
