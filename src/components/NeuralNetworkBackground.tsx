@@ -127,7 +127,6 @@ export default function NeuralNetworkBackground() {
 
     // Track touch events for multi-touch support
     const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
       touchesRef.current = Array.from(e.touches).map(touch => ({
         x: touch.clientX,
         y: touch.clientY,
@@ -164,9 +163,9 @@ export default function NeuralNetworkBackground() {
       startInteraction();
     };
 
-    window.addEventListener('touchmove', handleTouchMove, { passive: false });
-    window.addEventListener('touchstart', handleTouchStart, { passive: false });
-    window.addEventListener('touchend', handleTouchEnd, { passive: false });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     // Gyroscope / Device Orientation support
     const handleDeviceOrientation = (e: DeviceOrientationEvent) => {
