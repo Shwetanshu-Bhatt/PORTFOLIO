@@ -140,7 +140,7 @@ export default function NeuralNetworkBackground() {
 
       // Draw connections between nearby nodes
       const connectionDistance = 150;
-      const mouseConnectionDistance = 200;
+      const mouseConnectionDistance = 250;
 
       for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i];
@@ -154,14 +154,14 @@ export default function NeuralNetworkBackground() {
             const dist = Math.sqrt(dx * dx + dy * dy);
             
             if (dist < connectionDistance) {
-              const opacity = (1 - dist / connectionDistance) * 0.8; // 20% lighter
+              const opacity = (1 - dist / connectionDistance) * 0.3; // 20% lighter
               ctx.beginPath();
               ctx.moveTo(node.x, node.y);
               ctx.lineTo(other.x, other.y);
               ctx.strokeStyle = isDark 
-                ? `rgba(99, 102, 241, ${opacity * 0.1})`
+                ? `rgba(99, 102, 241, ${opacity * 0.7})`
                 : `rgba(0, 113, 227, ${opacity * 0.24})`;
-              ctx.lineWidth = isDark ? 0.5 : 0.8;
+              ctx.lineWidth = isDark ? 0.9 : 0.8;
               ctx.stroke();
             }
           }
@@ -178,8 +178,8 @@ export default function NeuralNetworkBackground() {
           ctx.moveTo(node.x, node.y);
           ctx.lineTo(mouse.x, mouse.y);
           ctx.strokeStyle = isDark 
-            ? `rgba(99, 102, 241, ${opacity * 0.35})`
-            : `rgba(0, 113, 227, ${opacity * 0.6})`;
+            ? `rgba(99, 102, 241, ${opacity * 1})`
+            : `rgba(0, 113, 227, ${opacity * 0.4})`;
           ctx.lineWidth = isDark ? 1 : 1.5;
           ctx.stroke();
         }
