@@ -1,0 +1,78 @@
+# Robots.txt for shwetanshubhatt.me
+# Optimized for SEO and Google Search Console
+
+# Allow all search engine crawlers
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://shwetanshubhatt.me/sitemap.xml
+
+# Crawl-delay (optional, for politeness)
+Crawl-delay: 1
+
+# Disallow admin pages (if any)
+Disallow: /admin/
+Disallow: /api/
+
+# Main sections for prioritization
+# Priority pages that should be crawled more frequently
+Allow: /#about
+Allow: /#skills
+Allow: /#experience
+Allow: /#projects
+Allow: /#education
+Allow: /#contact
+
+# Service pages
+Allow: /web-developer-dehradun
+Allow: /full-stack-developer-dehradun
+Allow: /backend-developer-dehradun
+Allow: /python-developer-dehradun
+Allow: /ai-developer-dehradun
+Allow: /freelance-developer-dehradun
+Allow: /web-developer-uttarakhand
+Allow: /full-stack-developer-uttarakhand
+Allow: /python-developer-uttarakhand
+
+# Personal brand pages
+Allow: /shwetanshu-bhatt
+Allow: /shwetanshu-bhatt-developer
+Allow: /shwetanshu-bhatt-dehradun
+
+# Service pages
+Allow: /website-development
+Allow: /backend-development
+Allow: /python-development
+Allow: /ai-integration
+Allow: /api-development
+Allow: /database-design
+Allow: /freelance-web-developer
+
+# Skill pages
+Allow: /nextjs-developer
+Allow: /postgresql-developer
+Allow: /docker-developer
+
+# Contact & Resume
+Allow: /hire-me
+Allow: /contact
+Allow: /resume
+
+# Googlebot specific rules
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0.5
+
+# Bingbot specific rules
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 0.5
+
+# DuckDuckBot
+User-agent: DuckDuckBot
+Allow: /
+
+# Yahoo! Slurp
+User-agent: Slurp
+Allow: /
