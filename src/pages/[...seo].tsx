@@ -3,6 +3,9 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 
+// Your actual domain
+const DOMAIN = 'https://shwetanshubhatt.apsgroupco.com';
+
 // SEO page data - defines title, description, and content for each page
 const seoPagesData: Record<string, {
   title: string;
@@ -269,7 +272,7 @@ export default function SEOPage() {
         <meta property="twitter:description" content={pageData.description} />
         
         {/* Canonical URL */}
-        <link rel="canonical" href={`https://shwetanshubhatt.me/${pageKey}`} />
+        <link rel="canonical" href={`https://shwetanshubhatt.apsgroupco.com/${pageKey}`} />
         
         {/* Additional SEO */}
         <meta name="author" content="Shwetanshu Bhatt" />
@@ -286,7 +289,7 @@ export default function SEOPage() {
               "@type": "Person",
               "name": "Shwetanshu Bhatt",
               "jobTitle": "Backend Developer",
-              "url": "https://shwetanshubhatt.me",
+              "url": "https://shwetanshubhatt.apsgroupco.com",
               "address": {
                 "@type": "PostalAddress",
                 "addressLocality": "Dehradun",
@@ -311,7 +314,7 @@ export default function SEOPage() {
               "@type": "LocalBusiness",
               "name": "Shwetanshu Bhatt - Web Developer Dehradun",
               "description": pageData.description,
-              "url": `https://shwetanshubhatt.me/${pageKey}`,
+              "url": `https://shwetanshubhatt.apsgroupco.com/${pageKey}`,
               "telephone": "+91-9456XXXXXX",
               "email": "shwetanshubhatt@gmail.com",
               "address": {
@@ -343,7 +346,7 @@ export default function SEOPage() {
               "provider": {
                 "@type": "Person",
                 "name": "Shwetanshu Bhatt",
-                "url": "https://shwetanshubhatt.me"
+                "url": "https://shwetanshubhatt.apsgroupco.com"
               },
               "areaServed": {
                 "@type": "State",

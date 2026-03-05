@@ -10,6 +10,7 @@ function MyApp({ Component, pageProps }: AppProps) {
 
   return (
     <ThemeProvider>
+      <meta name="google-site-verification" content="-7CmmqA5HUGFJBOuY7O9rZHejRSJzszfoVCd1YT4R0o" />
       {!isAdminPage && <CustomCursor />}
       <Component {...pageProps} />
     </ThemeProvider>
