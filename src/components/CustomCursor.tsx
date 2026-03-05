@@ -9,7 +9,6 @@ export default function CustomCursor() {
   const [isClicking, setIsClicking] = useState(false);
   const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
   
-  // Use refs for smooth animation without React re-renders
   const positionRef = useRef({ x: 0, y: 0 });
   const targetRef = useRef({ x: 0, y: 0 });
   const animationRef = useRef<number | null>(null);
@@ -17,7 +16,6 @@ export default function CustomCursor() {
   const isVisibleRef = useRef(false);
   const lastMoveTimeRef = useRef(Date.now());
 
-  // Throttled visibility check
   const checkVisibility = useCallback(() => {
     const now = Date.now();
     const timeSinceMove = now - lastMoveTimeRef.current;
@@ -35,7 +33,6 @@ export default function CustomCursor() {
   }, []);
 
   useEffect(() => {
-    // Check if touch device
     const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
     if (isTouchDevice) return;
 
@@ -45,14 +42,12 @@ export default function CustomCursor() {
 
     let frameCount = 0;
 
-    // Mouse move handler - just update target, no state changes
     const handleMouseMove = (e: MouseEvent) => {
       targetRef.current = { x: e.clientX, y: e.clientY };
       lastMoveTimeRef.current = Date.now();
       checkVisibility();
     };
 
-    // Mouse enter/leave for the window
     const handleMouseEnter = () => {
       isVisibleRef.current = true;
       cursor.style.opacity = '1';
@@ -65,11 +60,9 @@ export default function CustomCursor() {
       ring.style.opacity = '0';
     };
 
-    // Click handlers
     const handleMouseDown = (e: MouseEvent) => {
       setIsClicking(true);
       
-      // Add ripple effect
       const newRipple = {
         id: rippleIdRef.current++,
         x: e.clientX,
@@ -77,7 +70,6 @@ export default function CustomCursor() {
       };
       setRipples(prev => [...prev, newRipple]);
       
-      // Remove ripple after animation
       setTimeout(() => {
         setRipples(prev => prev.filter(r => r.id !== newRipple.id));
       }, 600);
@@ -85,11 +77,10 @@ export default function CustomCursor() {
 
     const handleMouseUp = () => setIsClicking(false);
 
-    // Detect hoverable elements with throttling
     let lastHoverCheck = 0;
     const handleElementHover = (e: MouseEvent) => {
       const now = Date.now();
-      if (now - lastHoverCheck < 50) return; // Throttle to 20fps
+      if (now - lastHoverCheck < 50) return;
       lastHoverCheck = now;
       
       const target = e.target as HTMLElement;
@@ -104,7 +95,6 @@ export default function CustomCursor() {
       setIsHovering(isHoverable);
     };
 
-    // Smooth animation loop at 30fps
     const animate = () => {
       frameCount++;
       
@@ -113,7 +103,6 @@ export default function CustomCursor() {
         return;
       }
 
-      // Linear interpolation for smooth following
       const ease = 0.15;
       positionRef.current.x += (targetRef.current.x - positionRef.current.x) * ease;
       positionRef.current.y += (targetRef.current.y - positionRef.current.y) * ease;
@@ -123,13 +112,11 @@ export default function CustomCursor() {
       cursor.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
       ring.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
 
-      // Check visibility based on time
       checkVisibility();
 
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    // Add event listeners
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('mouseover', handleElementHover, { passive: true });
     window.addEventListener('mousedown', handleMouseDown);
@@ -137,13 +124,10 @@ export default function CustomCursor() {
     document.addEventListener('mouseenter', handleMouseEnter);
     document.addEventListener('mouseleave', handleMouseLeave);
 
-    // Start animation
     animate();
 
-    // Hide default cursor via CSS
     document.body.style.cursor = 'none';
     
-    // Add global style to hide cursor on interactive elements
     const style = document.createElement('style');
     style.textContent = `
       a, button, [role="button"], input, textarea, select, [onclick] {
@@ -169,36 +153,38 @@ export default function CustomCursor() {
     };
   }, [checkVisibility]);
 
-  // Don't render on touch devices
   if (typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches) {
     return null;
   }
 
+  const cursorSize = isHovering ? '24px' : '15px';
+  const cursorHeight = isHovering ? '25px' : '16px';
+  const ringSize = isHovering ? '64px' : '32px';
+  
+  const clickShadow = '0 0 30px rgba(99, 102, 241, 0.9), 0 0 60px rgba(99, 102, 241, 0.6)';
+  const normalShadow = '0 0 20px rgba(99, 102, 241, 0.7), 0 0 40px rgba(99, 102, 241, 0.4)';
+
   return (
     <>
-      {/* Main cursor dot */}
       <div
         ref={cursorRef}
         className="fixed top-0 left-0 pointer-events-none z-[9999] opacity-0 will-change-transform"
         style={{
-          width: isHovering ? '24px' : '15px',
-          height: isHovering ? '25px' : '16px',
+          width: cursorSize,
+          height: cursorHeight,
           background: 'radial-gradient(circle, rgb(255, 255, 255) 10%, rgba(99, 102, 241, 0.7) 50%, rgba(255, 255, 255, 0.4) 70%)',
           borderRadius: '50%',
-          boxShadow: isClicking 
-            ? '0 0 30px rgba(99, 102, 241, 0.9), 0 0 60px rgba(99, 102, 241, 0.6)'
-            : '0 0 20px rgba(99, 102, 241, 0.7), 0 0 40px rgba(99, 102, 241, 0.4)',
+          boxShadow: isClicking ? clickShadow : normalShadow,
           transition: 'width 0.2s ease, height 0.2s ease, box-shadow 0.15s ease, opacity 0.2s ease',
         }}
       />
 
-      {/* Outer pulsing ring */}
       <div
         ref={ringRef}
         className="fixed top-0 left-0 pointer-events-none z-[9998] opacity-0 will-change-transform"
         style={{
-          width: isHovering ? '64px' : '32px',
-          height: isHovering ? '64px' : '32px',
+          width: ringSize,
+          height: ringSize,
           border: '1px solid rgba(99, 102, 241, 0.5)',
           borderRadius: '50%',
           animation: 'cursorPulse 2s ease-in-out infinite',
@@ -206,7 +192,6 @@ export default function CustomCursor() {
         }}
       />
 
-      {/* Click ripples */}
       {ripples.map(ripple => (
         <div
           key={ripple.id}
@@ -224,7 +209,6 @@ export default function CustomCursor() {
         />
       ))}
 
-      {/* Keyframe animations */}
       <style jsx global>{`
         @keyframes cursorPulse {
           0%, 100% {
