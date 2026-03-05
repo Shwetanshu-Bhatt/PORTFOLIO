@@ -1,0 +1,52 @@
+{
+  "projects": [
+    {
+      "id": "qa-engine",
+      "title": "QA Engine",
+      "description": "Production-scale backend system to autonomously generate and validate technical MCQs. Reduced question generation cost by 95% and generation time by 90%.",
+      "tech": ["Python", "PostgreSQL", "Asyncio", "Groq API", "OpenAI API", "Gemini API"],
+      "link": "#",
+      "stats": ["95% Cost Reduction", "90% Time Reduction"]
+    },
+    {
+      "id": "ai-stock-predictor",
+      "title": "AI Stock Price Predictor Demo",
+      "description": "Machine learning model that predicts next-day open and close stock prices using historical OHLCV market data. Features data preprocessing, feature scaling, and model evaluation with MAE/RMSE metrics.",
+      "tech": ["Python", "Pandas", "Scikit-Learn", "Linear Regression", "Financial Data Analysis"],
+      "link": "https://investwise-qunf.onrender.com/",
+      "stats": []
+    },
+    {
+      "id": "studysync",
+      "title": "StudySync",
+      "description": "Full-stack collaborative learning platform with role-based system, real-time chat via WebSockets, file uploads to Cloudinary, and JWT authentication. Teachers upload notes, students browse by branch/year/semester.",
+      "tech": ["React", "Vite", "Tailwind CSS", "Node.js", "Express.js", "MongoDB", "Socket.io", "Cloudinary", "JWT"],
+      "link": "https://studysync.apsgroupco.com/login",
+      "stats": []
+    },
+    {
+      "id": "haptic-hearing",
+      "title": "Haptic Hearing System",
+      "description": "Wearable assistive technology that converts environmental sounds into vibration signals. System captures surrounding sound, processes signals to filter meaningful sounds, and provides directional feedback via two wristbands with vibration intensity representing distance/loudness.",
+      "tech": ["Arduino", "Embedded Systems", "Signal Processing", "Wearable Tech"],
+      "link": "#",
+      "stats": []
+    },
+    {
+      "id": "portfolio",
+      "title": "Portfolio Website",
+      "description": "Built responsive developer portfolio with modern UI and optimized performance.",
+      "tech": ["Next.js", "Tailwind CSS", "JavaScript"],
+      "link": "https://shwetanshubhatt.vercel.app/",
+      "stats": []
+    },
+    {
+      "id": "hostel-management",
+      "title": "Hostel Management System",
+      "description": "Backend system to manage hostels, rooms, and student records. Designed database schema and implemented backend logic.",
+      "tech": ["Spring Boot", "PostgreSQL", "Thymeleaf"],
+      "link": "#",
+      "stats": []
+    }
+  ]
+}

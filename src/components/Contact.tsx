@@ -1,3 +1,5 @@
+import { personal } from '@/data';
+
 export default function Contact() {
   return (
     <section id="contact" className="py-24 px-6">
@@ -25,8 +27,8 @@ export default function Contact() {
         }}>
 
           {/* Email */}
-          <a 
-            href="mailto:shwetanshubhatt@gmail.com"
+          <a
+            href={`mailto:${personal.email}`}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -66,7 +68,7 @@ export default function Contact() {
                 Email
               </p>
               <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                shwetanshubhatt@gmail.com
+                {personal.email}
               </p>
             </div>
           </a>
@@ -190,7 +192,7 @@ export default function Contact() {
 
             <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.75rem' }}>
               <a 
-                href="mailto:shwetanshubhatt@gmail.com"
+                href="https://www.fiverr.com/s/qD13d32"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',

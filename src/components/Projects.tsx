@@ -1,49 +1,6 @@
-export default function Projects() {
-  const projects = [
-    {
-      title: "QA Engine",
-      description: "Production-scale backend system to autonomously generate and validate technical MCQs. Reduced question generation cost by 95% and generation time by 90%.",
-      tech: ["Python", "PostgreSQL", "Asyncio", "Groq API", "OpenAI API", "Gemini API"],
-      link: "#",
-      stats: ["95% Cost Reduction", "90% Time Reduction"]
-    },
-    {
-      title: "AI Stock Price Predictor Demo",
-      description: "Machine learning model that predicts next-day open and close stock prices using historical OHLCV market data. Features data preprocessing, feature scaling, and model evaluation with MAE/RMSE metrics.",
-      tech: ["Python", "Pandas", "Scikit-Learn", "Linear Regression", "Financial Data Analysis"],
-      link: "https://investwise-qunf.onrender.com/",
-      stats: []
-    },
-    {
-      title: "StudySync",
-      description: "Full-stack collaborative learning platform with role-based system, real-time chat via WebSockets, file uploads to Cloudinary, and JWT authentication. Teachers upload notes, students browse by branch/year/semester.",
-      tech: ["React", "Vite", "Tailwind CSS", "Node.js", "Express.js", "MongoDB", "Socket.io", "Cloudinary", "JWT"],
-      link: "https://studysync.apsgroupco.com/login",
-      stats: []
-    },
-    {
-      title: "Haptic Hearing System",
-      description: "Wearable assistive technology that converts environmental sounds into vibration signals. System captures surrounding sound, processes signals to filter meaningful sounds, and provides directional feedback via two wristbands with vibration intensity representing distance/loudness.",
-      tech: ["Arduino", "Embedded Systems", "Signal Processing", "Wearable Tech"],
-      link: "#",
-      stats: []
-    },
-    {
-      title: "Portfolio Website",
-      description: "Built responsive developer portfolio with modern UI and optimized performance.",
-      tech: ["Next.js", "Tailwind CSS", "JavaScript"],
-      link: "https://shwetanshubhatt.vercel.app/",
-      stats: []
-    },
-    {
-      title: "Hostel Management System",
-      description: "Backend system to manage hostels, rooms, and student records. Designed database schema and implemented backend logic.",
-      tech: ["Spring Boot", "PostgreSQL", "Thymeleaf"],
-      link: "#",
-      stats: []
-    }
-  ];
+import { projects } from '@/data';
 
+export default function Projects() {
   return (
     <section id="Projects" className="py-24 px-6">
       <div className="container">
@@ -53,10 +10,10 @@ export default function Projects() {
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project, index) => (
+          {projects.projects.map((project, index) => (
             project.link !== "#" ? (
             <a 
-              key={index} 
+              key={project.id || index} 
               href={project.link}
               className="card block group h-full flex flex-col"
             >
@@ -101,10 +58,10 @@ export default function Projects() {
             </a>
             ) : (
             <div 
-              key={index} 
-              className="card block group h-full flex flex-col"
+              key={project.id || index}
+              className="card group h-full flex flex-col"
             >
-              <h3 className="text-xl font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors duration-300">
+              <h3 className="text-xl font-semibold text-[var(--text-primary)]">
                 {project.title}
               </h3>
               
@@ -116,7 +73,7 @@ export default function Projects() {
                 {project.tech.map((t, tIndex) => (
                   <span 
                     key={tIndex}
-                    className="text-xs px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-primary)]/50 text-[var(--text-secondary)] transition-all duration-300 group-hover:border-[var(--accent-primary)]/30 group-hover:text-[var(--text-primary)]"
+                    className="text-xs px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-primary)]/50 text-[var(--text-secondary)]"
                   >
                     {t}
                   </span>
@@ -135,6 +92,10 @@ export default function Projects() {
                   ))}
                 </div>
               )}
+              
+              <div className="mt-4 text-[var(--text-secondary)] text-sm">
+                Coming Soon
+              </div>
             </div>
             )
           ))}

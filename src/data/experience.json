@@ -1,0 +1,18 @@
+{
+  "experiences": [
+    {
+      "id": "neoveda-intern",
+      "role": "Software Engineering Intern",
+      "company": "Neoveda Technologies",
+      "duration": "Oct 2025 – Feb 2026",
+      "description": [
+        "Built backend systems from scratch using Python and PostgreSQL to support automated workflows",
+        "Developed internal QA Engine that automated MCQ generation and validation pipeline",
+        "Implemented lease-based locking, crash recovery, deterministic ID generation, and retry pipelines",
+        "Integrated multiple AI providers (Groq, OpenAI, Gemini) with validation and correction layers",
+        "Designed fault-tolerant, database-driven architecture capable of autonomous long-running execution"
+      ],
+      "highlights": ["95% Cost Reduction", "90% Time Reduction", "Multi-AI Integration"]
+    }
+  ]
+}

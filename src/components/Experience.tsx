@@ -1,28 +1,14 @@
-export default function Experience() {
-  const experiences = [
-    {
-      role: "Software Engineering Intern",
-      company: "Neoveda Technologies",
-      duration: "Oct 2025 – Feb 2026",
-      description: [
-        "Built backend systems from scratch using Python and PostgreSQL to support automated workflows",
-        "Developed internal QA Engine that automated MCQ generation and validation pipeline",
-        "Implemented lease-based locking, crash recovery, deterministic ID generation, and retry pipelines",
-        "Integrated multiple AI providers (Groq, OpenAI, Gemini) with validation and correction layers",
-        "Designed fault-tolerant, database-driven architecture capable of autonomous long-running execution"
-      ],
-      highlights: ["95% Cost Reduction", "90% Time Reduction", "Multi-AI Integration"]
-    }
-  ];
+import { experience } from '@/data';
 
+export default function Experience() {
   return (
     <section id="Experience" className="py-24 px-6">
       <div className="container">
         <h2 className="section-title mb-12">Experience</h2>
         
         <div className="max-w-4xl mx-auto space-y-8">
-          {experiences.map((exp, index) => (
-            <div key={index} className="card group">
+          {experience.experiences.map((exp, index) => (
+            <div key={exp.id || index} className="card group">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4 gap-2">
                 <div>
                   <h3 className="text-xl font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors duration-300">

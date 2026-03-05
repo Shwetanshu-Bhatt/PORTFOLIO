@@ -1,18 +1,38 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 export default function CustomCursor() {
   const cursorRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
   const [isHovering, setIsHovering] = useState(false);
   const [isClicking, setIsClicking] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
   const [ripples, setRipples] = useState<{ id: number; x: number; y: number }[]>([]);
+  
+  // Use refs for smooth animation without React re-renders
   const positionRef = useRef({ x: 0, y: 0 });
   const targetRef = useRef({ x: 0, y: 0 });
   const animationRef = useRef<number | null>(null);
   const rippleIdRef = useRef(0);
+  const isVisibleRef = useRef(false);
+  const lastMoveTimeRef = useRef(Date.now());
+
+  // Throttled visibility check
+  const checkVisibility = useCallback(() => {
+    const now = Date.now();
+    const timeSinceMove = now - lastMoveTimeRef.current;
+    const shouldBeVisible = timeSinceMove < 100;
+    
+    if (shouldBeVisible !== isVisibleRef.current) {
+      isVisibleRef.current = shouldBeVisible;
+      if (cursorRef.current) {
+        cursorRef.current.style.opacity = shouldBeVisible ? '1' : '0';
+      }
+      if (ringRef.current) {
+        ringRef.current.style.opacity = shouldBeVisible ? '1' : '0';
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Check if touch device
@@ -23,15 +43,27 @@ export default function CustomCursor() {
     const ring = ringRef.current;
     if (!cursor || !ring) return;
 
-    // Mouse move handler with smooth animation
+    let frameCount = 0;
+
+    // Mouse move handler - just update target, no state changes
     const handleMouseMove = (e: MouseEvent) => {
       targetRef.current = { x: e.clientX, y: e.clientY };
-      setIsVisible(true);
+      lastMoveTimeRef.current = Date.now();
+      checkVisibility();
     };
 
     // Mouse enter/leave for the window
-    const handleMouseEnter = () => setIsVisible(true);
-    const handleMouseLeave = () => setIsVisible(false);
+    const handleMouseEnter = () => {
+      isVisibleRef.current = true;
+      cursor.style.opacity = '1';
+      ring.style.opacity = '1';
+    };
+    
+    const handleMouseLeave = () => {
+      isVisibleRef.current = false;
+      cursor.style.opacity = '0';
+      ring.style.opacity = '0';
+    };
 
     // Click handlers
     const handleMouseDown = (e: MouseEvent) => {
@@ -53,8 +85,13 @@ export default function CustomCursor() {
 
     const handleMouseUp = () => setIsClicking(false);
 
-    // Detect hoverable elements
+    // Detect hoverable elements with throttling
+    let lastHoverCheck = 0;
     const handleElementHover = (e: MouseEvent) => {
+      const now = Date.now();
+      if (now - lastHoverCheck < 50) return; // Throttle to 20fps
+      lastHoverCheck = now;
+      
       const target = e.target as HTMLElement;
       const isHoverable = 
         target.tagName === 'A' ||
@@ -67,17 +104,27 @@ export default function CustomCursor() {
       setIsHovering(isHoverable);
     };
 
-    // Smooth animation loop
+    // Smooth animation loop at 30fps
     const animate = () => {
+      frameCount++;
+      
+      if (frameCount % 2 !== 0) {
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
       // Linear interpolation for smooth following
-      const ease = 1;
+      const ease = 0.15;
       positionRef.current.x += (targetRef.current.x - positionRef.current.x) * ease;
       positionRef.current.y += (targetRef.current.y - positionRef.current.y) * ease;
 
-      if (cursor && ring) {
-        cursor.style.transform = `translate(${positionRef.current.x}px, ${positionRef.current.y}px) translate(-50%, -50%)`;
-        ring.style.transform = `translate(${positionRef.current.x}px, ${positionRef.current.y}px) translate(-50%, -50%)`;
-      }
+      const { x, y } = positionRef.current;
+      
+      cursor.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+      ring.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+
+      // Check visibility based on time
+      checkVisibility();
 
       animationRef.current = requestAnimationFrame(animate);
     };
@@ -120,7 +167,7 @@ export default function CustomCursor() {
       document.body.style.cursor = '';
       document.head.removeChild(style);
     };
-  }, []);
+  }, [checkVisibility]);
 
   // Don't render on touch devices
   if (typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches) {
@@ -132,9 +179,7 @@ export default function CustomCursor() {
       {/* Main cursor dot */}
       <div
         ref={cursorRef}
-        className={`fixed top-0 left-0 pointer-events-none z-[9999] transition-opacity duration-200 ${
-          isVisible ? 'opacity-100' : 'opacity-0'
-        }`}
+        className="fixed top-0 left-0 pointer-events-none z-[9999] opacity-0 will-change-transform"
         style={{
           width: isHovering ? '24px' : '15px',
           height: isHovering ? '25px' : '16px',
@@ -143,23 +188,21 @@ export default function CustomCursor() {
           boxShadow: isClicking 
             ? '0 0 30px rgba(99, 102, 241, 0.9), 0 0 60px rgba(99, 102, 241, 0.6)'
             : '0 0 20px rgba(99, 102, 241, 0.7), 0 0 40px rgba(99, 102, 241, 0.4)',
-          transition: 'width 0.2s ease, height 0.2s ease, box-shadow 0.15s ease',
+          transition: 'width 0.2s ease, height 0.2s ease, box-shadow 0.15s ease, opacity 0.2s ease',
         }}
       />
 
       {/* Outer pulsing ring */}
       <div
         ref={ringRef}
-        className={`fixed top-0 left-0 pointer-events-none z-[9998] transition-opacity duration-200 ${
-          isVisible ? 'opacity-100' : 'opacity-0'
-        }`}
+        className="fixed top-0 left-0 pointer-events-none z-[9998] opacity-0 will-change-transform"
         style={{
           width: isHovering ? '64px' : '32px',
           height: isHovering ? '64px' : '32px',
           border: '1px solid rgba(99, 102, 241, 0.5)',
           borderRadius: '50%',
           animation: 'cursorPulse 2s ease-in-out infinite',
-          transition: 'width 0.2s ease, height 0.2s ease',
+          transition: 'width 0.2s ease, height 0.2s ease, opacity 0.2s ease',
         }}
       />
 
@@ -201,8 +244,8 @@ export default function CustomCursor() {
             opacity: 1;
           }
           100% {
-            width: 60px;
-            height: 60px;
+            width: 40px;
+            height: 40px;
             opacity: 0;
           }
         }

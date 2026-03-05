@@ -1,3 +1,5 @@
+import { personal } from '@/data';
+
 export default function Footer() {
   return (
     <footer className="py-8 px-6 bg-[var(--bg-primary)] border-t border-[var(--border-color)]">
@@ -6,7 +8,7 @@ export default function Footer() {
           {/* Social Links */}
           <div className="flex justify-center gap-5">
             <a 
-              href="https://github.com/Shwetanshu-Bhatt" 
+              href={personal.github}
               target="_blank" 
               rel="noopener noreferrer"
               className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors p-2"
@@ -17,7 +19,7 @@ export default function Footer() {
               </svg>
             </a>
             <a 
-              href="https://www.linkedin.com/in/shwetanshu-bhatt-082167257" 
+              href={personal.linkedin}
               target="_blank" 
               rel="noopener noreferrer"
               className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors p-2"
@@ -28,7 +30,7 @@ export default function Footer() {
               </svg>
             </a>
             <a 
-              href="mailto:shwetanshubhatt@gmail.com" 
+              href={`mailto:${personal.email}`}
               className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors p-2"
               aria-label="Email"
             >
@@ -36,21 +38,16 @@ export default function Footer() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </a>
-            <a 
-              href="https://www.fiverr.com/s/qD13d32" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-[var(--text-secondary)] hover:text-emerald-500 transition-colors p-2"
-              aria-label="Fiverr"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-              </svg>
-            </a>
           </div>
-          
+
+          {/* Name */}
+          <p className="text-[var(--text-primary)] font-medium">
+            {personal.name}
+          </p>
+
+          {/* Copyright */}
           <p className="text-[var(--text-secondary)] text-sm">
-            © {new Date().getFullYear()} Shwetanshu Bhatt. All Rights Reserved.
+            © {new Date().getFullYear()} {personal.name}. All rights reserved.
           </p>
         </div>
       </div>

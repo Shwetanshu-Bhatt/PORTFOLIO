@@ -1,0 +1,40 @@
+{
+  "categories": [
+    {
+      "id": "languages",
+      "title": "Languages",
+      "skills": ["Python", "JavaScript", "C++"],
+      "color": "var(--accent-primary)"
+    },
+    {
+      "id": "backend",
+      "title": "Backend",
+      "skills": ["PostgreSQL", "REST APIs", "Database Design", "Concurrency Control"],
+      "color": "var(--accent-secondary)"
+    },
+    {
+      "id": "ai-systems",
+      "title": "AI Systems",
+      "skills": ["OpenAI API", "Groq API", "Gemini API", "Prompt Engineering", "AI Integration"],
+      "color": "var(--accent-tertiary)"
+    },
+    {
+      "id": "web",
+      "title": "Web",
+      "skills": ["Next.js", "Tailwind CSS"],
+      "color": "var(--accent-primary)"
+    },
+    {
+      "id": "tools",
+      "title": "Tools",
+      "skills": ["Git", "Linux", "Docker"],
+      "color": "var(--accent-secondary)"
+    },
+    {
+      "id": "core-cs",
+      "title": "Core CS",
+      "skills": ["Data Structures", "Algorithms", "System Design"],
+      "color": "var(--accent-tertiary)"
+    }
+  ]
+}

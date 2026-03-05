@@ -1,35 +1,6 @@
-export default function Education() {
-  const education = [
-    {
-      degree: "B.Tech in Computer Science Engineering",
-      institution: "Graphic Era Hill University, Dehradun",
-      duration: "2024 – 2027",
-      details: "Currently Pursuing",
-      type: "degree"
-    },
-    {
-      degree: "Diploma in Engineering",
-      institution: "Government Polytechnic Dehradun",
-      duration: "2022 – 2024",
-      details: "CGPA: 8",
-      type: "diploma"
-    },
-    {
-      degree: "Class 12",
-      institution: "Kendriya Vidyalaya Uttarkashi (CBSE)",
-      duration: "2021 – 2022",
-      details: "78%",
-      type: "school"
-    },
-    {
-      degree: "Class 10",
-      institution: "Masseeh Dilasa School, Uttarkashi (ICSE)",
-      duration: "2019 – 2020",
-      details: "90%",
-      type: "school"
-    }
-  ];
+import { education } from '@/data';
 
+export default function Education() {
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'degree':
@@ -47,9 +18,9 @@ export default function Education() {
         <h2 className="section-title mb-12">Education</h2>
         
         <div className="max-w-4xl mx-auto space-y-4">
-          {education.map((edu, index) => (
+          {education.education.map((edu, index) => (
             <div 
-              key={index} 
+              key={edu.id || index} 
               className="card flex flex-col md:flex-row md:items-center gap-4 group"
             >
               <div className="flex-1">
@@ -59,11 +30,14 @@ export default function Education() {
                     {edu.degree}
                   </h3>
                 </div>
-                <p className="text-[var(--text-secondary)] ml-6 text-sm">{edu.institution}</p>
+                <p className="text-[var(--text-secondary)] ml-5.5">{edu.institution}</p>
               </div>
-              <div className="text-left md:text-right ml-6 md:ml-0">
-                <span className="text-[var(--accent-primary)] font-medium text-sm block">{edu.duration}</span>
-                <p className="text-[var(--text-secondary)] text-xs mt-0.5">{edu.details}</p>
+              
+              <div className="flex items-center gap-4 md:text-right ml-5.5 md:ml-0">
+                <div>
+                  <p className="text-sm text-[var(--text-secondary)] whitespace-nowrap">{edu.duration}</p>
+                  <p className="text-sm text-[var(--accent-primary)] font-medium">{edu.details}</p>
+                </div>
               </div>
             </div>
           ))}

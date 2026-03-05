@@ -1,37 +1,6 @@
-export default function Skills() {
-  const skillCategories = [
-    {
-      title: "Languages",
-      skills: ["Python", "JavaScript", "C++"],
-      color: "var(--accent-primary)"
-    },
-    {
-      title: "Backend",
-      skills: ["PostgreSQL", "REST APIs", "Database Design", "Concurrency Control"],
-      color: "var(--accent-secondary)"
-    },
-    {
-      title: "AI Systems",
-      skills: ["OpenAI API", "Groq API", "Gemini API", "Prompt Engineering", "AI Integration"],
-      color: "var(--accent-tertiary)"
-    },
-    {
-      title: "Web",
-      skills: ["Next.js", "Tailwind CSS"],
-      color: "var(--accent-primary)"
-    },
-    {
-      title: "Tools",
-      skills: ["Git", "Linux", "Docker"],
-      color: "var(--accent-secondary)"
-    },
-    {
-      title: "Core CS",
-      skills: ["Data Structures", "Algorithms", "System Design"],
-      color: "var(--accent-tertiary)"
-    }
-  ];
+import { skills } from '@/data';
 
+export default function Skills() {
   return (
     <section id="Skills" className="py-24 px-6">
       <div className="container">
@@ -41,9 +10,9 @@ export default function Skills() {
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {skillCategories.map((category, index) => (
+          {skills.categories.map((category, index) => (
             <div 
-              key={index} 
+              key={category.id || index} 
               className="card group"
               style={{ 
                 borderColor: `${category.color}20`,

@@ -1,0 +1,36 @@
+{
+  "education": [
+    {
+      "id": "btech",
+      "degree": "B.Tech in Computer Science Engineering",
+      "institution": "Graphic Era Hill University, Dehradun",
+      "duration": "2024 – 2027",
+      "details": "Currently Pursuing",
+      "type": "degree"
+    },
+    {
+      "id": "diploma",
+      "degree": "Diploma in Engineering",
+      "institution": "Government Polytechnic Dehradun",
+      "duration": "2022 – 2024",
+      "details": "CGPA: 8",
+      "type": "diploma"
+    },
+    {
+      "id": "class-12",
+      "degree": "Class 12",
+      "institution": "Kendriya Vidyalaya Uttarkashi (CBSE)",
+      "duration": "2021 – 2022",
+      "details": "78%",
+      "type": "school"
+    },
+    {
+      "id": "class-10",
+      "degree": "Class 10",
+      "institution": "Masseeh Dilasa School, Uttarkashi (ICSE)",
+      "duration": "2019 – 2020",
+      "details": "90%",
+      "type": "school"
+    }
+  ]
+}
