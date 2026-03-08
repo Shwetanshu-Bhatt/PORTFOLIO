@@ -93,8 +93,7 @@ export default function Projects() {
                 </div>
               )}
               
-              <div className="mt-4 text-[var(--text-secondary)] text-sm">
-                Coming Soon
+              <div className="mt-4">
               </div>
             </div>
             )
@@ -104,3 +103,4 @@ export default function Projects() {
     </section>
   );
 }
+
