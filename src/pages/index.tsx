@@ -1,4 +1,6 @@
+import { GetStaticProps } from "next";
 import dynamic from "next/dynamic";
+import Head from "next/head";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
@@ -32,6 +34,56 @@ const CursorTrail = dynamic(() => import("@/components/CursorTrail"), {
 export default function Home() {
   return (
     <>
+      <Head>
+        <title>Shwetanshu Bhatt | Backend Developer & AI Systems Expert | Dehradun, Uttarakhand</title>
+        <meta name="description" content="Professional backend developer and AI systems expert in Dehradun, Uttarakhand. Building production-scale AI-integrated backend systems with Python, PostgreSQL, and Next.js." />
+        <meta name="keywords" content="backend developer, AI developer, python developer, web developer dehradun, uttarakhand, full stack developer, nextjs developer" />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Shwetanshu Bhatt | Backend Developer & AI Systems Expert" />
+        <meta property="og:description" content="Building production-scale AI-integrated backend systems. Reduced operational costs by 95%." />
+        
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:title" content="Shwetanshu Bhatt | Backend Developer & AI Systems Expert" />
+        <meta property="twitter:description" content="Building production-scale AI-integrated backend systems. Reduced operational costs by 95%." />
+        
+        {/* Canonical URL */}
+        <link rel="canonical" href="https://shwetanshubhatt.apsgroupco.com/" />
+        
+        {/* Additional SEO */}
+        <meta name="author" content="Shwetanshu Bhatt" />
+        <meta name="robots" content="index, follow" />
+        <meta name="geo.region" content="IN-UT" />
+        <meta name="geo.placename" content="Dehradun" />
+        
+        {/* Structured Data - Person */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Person",
+              "name": "Shwetanshu Bhatt",
+              "jobTitle": "Backend Developer",
+              "url": "https://shwetanshubhatt.apsgroupco.com",
+              "address": {
+                "@type": "PostalAddress",
+                "addressLocality": "Dehradun",
+                "addressRegion": "Uttarakhand",
+                "addressCountry": "IN"
+              },
+              "email": "shwetanshubhatt@gmail.com",
+              "sameAs": [
+                "https://github.com/Shwetanshu-Bhatt",
+                "https://linkedin.com/in/shwetanshu-bhatt"
+              ]
+            })
+          }}
+        />
+      </Head>
+      
       {/* Neural Network Background - Full page coverage */}
       <NeuralNetworkBackground />
       
@@ -56,3 +108,10 @@ export default function Home() {
     </>
   );
 }
+
+export const getStaticProps: GetStaticProps = async () => {
+  return {
+    props: {},
+    revalidate: 60 // ISR: regenerate page every 60 seconds
+  };
+};

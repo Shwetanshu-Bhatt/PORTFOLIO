@@ -6,244 +6,202 @@
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
         xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
   
-  <!-- Main Pages -->
+  <!-- Main Page -->
   <url>
     <loc>https://shwetanshubhatt.apsgroupco.com/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <lastmod>2026-03-05</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/#about</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-    <lastmod>2026-03-05</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/#skills</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-    <lastmod>2026-03-05</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/#experience</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-    <lastmod>2026-03-05</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/#projects</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <lastmod>2026-03-05</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/#education</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <lastmod>2026-03-05</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/#contact</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
 
   <!-- Location-Based SEO Pages for Dehradun, Uttarakhand -->
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/web-developer-dehradun</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/web-developer-dehradun/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
-    <lastmod>2026-03-05</lastmod>
-    <xhtml:link rel="alternate" hreflang="en" href="https://shwetanshubhatt.apsgroupco.com/web-developer-dehradun"/>
+    <lastmod>2026-03-09</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://shwetanshubhatt.apsgroupco.com/web-developer-dehradun/"/>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/full-stack-developer-dehradun</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/full-stack-developer-dehradun/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/backend-developer-dehradun</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/backend-developer-dehradun/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/python-developer-dehradun</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/python-developer-dehradun/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/ai-developer-dehradun</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/ai-developer-dehradun/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/freelance-developer-dehradun</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/freelance-developer-dehradun/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/web-developer-uttarakhand</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/web-developer-uttarakhand/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/full-stack-developer-uttarakhand</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/full-stack-developer-uttarakhand/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/python-developer-uttarakhand</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/python-developer-uttarakhand/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
 
   <!-- Personal Brand - Name Search Optimization -->
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/shwetanshu-bhatt</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/shwetanshu-bhatt/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/shwetanshu-bhatt-developer</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/shwetanshu-bhatt-developer/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/shwetanshu-bhatt-dehradun</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/shwetanshu-bhatt-dehradun/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
 
   <!-- Service-Based Pages -->
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/website-development</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/website-development/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/backend-development</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/backend-development/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/python-development</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/python-development/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/ai-integration</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/ai-integration/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/api-development</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/api-development/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/database-design</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/database-design/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/freelance-web-developer</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/freelance-web-developer/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
 
   <!-- Skill-Based Pages -->
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/nextjs-developer</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/nextjs-developer/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/postgresql-developer</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/postgresql-developer/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/docker-developer</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/docker-developer/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
 
   <!-- Contact & Hire Pages -->
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/hire-me</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/hire-me/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
   
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/contact</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/contact/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
 
   <!-- Resume Page -->
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/resume</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/resume/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
 
   <!-- Blog/Notes Section (if added in future) -->
   <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/blog</loc>
+    <loc>https://shwetanshubhatt.apsgroupco.com/blog/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-03-05</lastmod>
+    <lastmod>2026-03-09</lastmod>
   </url>
 
 </urlset>

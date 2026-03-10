@@ -272,7 +272,7 @@ export default function SEOPage() {
         <meta property="twitter:description" content={pageData.description} />
         
         {/* Canonical URL */}
-        <link rel="canonical" href={`https://shwetanshubhatt.apsgroupco.com/${pageKey}`} />
+        <link rel="canonical" href={`https://shwetanshubhatt.apsgroupco.com/${pageKey}/`} />
         
         {/* Additional SEO */}
         <meta name="author" content="Shwetanshu Bhatt" />
@@ -314,7 +314,7 @@ export default function SEOPage() {
               "@type": "LocalBusiness",
               "name": "Shwetanshu Bhatt - Web Developer Dehradun",
               "description": pageData.description,
-              "url": `https://shwetanshubhatt.apsgroupco.com/${pageKey}`,
+              "url": `https://shwetanshubhatt.apsgroupco.com/${pageKey}/`,
               "telephone": "+91-9456XXXXXX",
               "email": "shwetanshubhatt@gmail.com",
               "address": {
@@ -513,7 +513,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
   
   return {
     paths,
-    fallback: 'blocking'
+    fallback: false // Changed from 'blocking' to false - all pages must be pre-rendered
   };
 };
 
