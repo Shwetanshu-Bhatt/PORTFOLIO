@@ -1,6 +1,4 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+const nextConfig = {
   // Ensure trailing slashes for proper static generation
   trailingSlash: true,
   
