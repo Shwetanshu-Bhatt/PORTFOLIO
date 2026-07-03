@@ -3,9 +3,6 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 
-// Your actual domain
-const DOMAIN = 'https://shwetanshubhatt.apsgroupco.com';
-
 // SEO page data - defines title, description, and content for each page
 const seoPagesData: Record<string, {
   title: string;
@@ -379,19 +376,19 @@ export default function SEOPage() {
             paddingBottom: '1rem',
             borderBottom: '1px solid rgba(255,255,255,0.1)'
           }}>
-            <a href="/" style={{ 
+            <Link href="/" style={{ 
               color: '#fff', 
               textDecoration: 'none',
               fontSize: '1.25rem',
               fontWeight: 'bold'
             }}>
               Shwetanshu Bhatt
-            </a>
+            </Link>
             <div style={{ display: 'flex', gap: '1.5rem' }}>
-              <a href="/#about" style={{ color: '#aaa', textDecoration: 'none' }}>About</a>
-              <a href="/#skills" style={{ color: '#aaa', textDecoration: 'none' }}>Skills</a>
-              <a href="/#experience" style={{ color: '#aaa', textDecoration: 'none' }}>Experience</a>
-              <a href="/#contact" style={{ color: '#aaa', textDecoration: 'none' }}>Contact</a>
+              <Link href="/#about" style={{ color: '#aaa', textDecoration: 'none' }}>About</Link>
+              <Link href="/#skills" style={{ color: '#aaa', textDecoration: 'none' }}>Skills</Link>
+              <Link href="/#experience" style={{ color: '#aaa', textDecoration: 'none' }}>Experience</Link>
+              <Link href="/#contact" style={{ color: '#aaa', textDecoration: 'none' }}>Contact</Link>
             </div>
           </nav>
           
@@ -447,7 +444,7 @@ export default function SEOPage() {
             gap: '1rem',
             flexWrap: 'wrap'
           }}>
-            <a 
+            <Link 
               href="/#contact"
               style={{
                 background: 'linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%)',
@@ -460,8 +457,8 @@ export default function SEOPage() {
               }}
             >
               {pageData.cta}
-            </a>
-            <a 
+            </Link>
+            <Link 
               href="/#projects"
               style={{
                 background: 'transparent',
@@ -475,7 +472,7 @@ export default function SEOPage() {
               }}
             >
               View My Work
-            </a>
+            </Link>
           </div>
           
           {/* Contact Info */}
@@ -517,7 +514,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
   };
 };
 
-export const getStaticProps: GetStaticProps = async ({ params }) => {
+export const getStaticProps: GetStaticProps = async () => {
   return {
     props: {},
     revalidate: 60 // ISR: regenerate page every 60 seconds

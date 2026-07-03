@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 
 export default function AdminLogin() {
@@ -100,9 +101,9 @@ export default function AdminLogin() {
         </form>
 
         <div className="mt-6 text-center">
-          <a href="/" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors">
+          <Link href="/" className="text-sm text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors">
             ← Back to Portfolio
-          </a>
+          </Link>
         </div>
       </div>
     </div>

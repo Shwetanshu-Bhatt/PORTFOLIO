@@ -1,24 +1,16 @@
 import { education } from '@/data';
+import type { Education } from '@/data';
+
+const typedEducation = education as { education: Education[] };
 
 export default function Education() {
-  const getTypeColor = (type?: string) => {
-    switch (type) {
-      case 'degree':
-        return 'bg-[var(--accent-primary)]';
-      case 'diploma':
-        return 'bg-[var(--accent-secondary)]';
-      default:
-        return 'bg-[var(--accent-tertiary)]';
-    }
-  };
-
   return (
     <section id="Education" className="py-24 px-6">
       <div className="container">
         <h2 className="section-title mb-12">Education</h2>
 
         <div className="max-w-4xl mx-auto space-y-4">
-          {education?.education?.map((edu: any, index: number) => (
+          {typedEducation.education.map((edu, index) => (
             <div
               key={edu?.id ?? index}
               className="card flex flex-col md:flex-row md:items-center gap-2 md:gap-6 group mb-3"

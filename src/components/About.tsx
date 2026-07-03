@@ -6,7 +6,7 @@ export default function About() {
         
         <div className="card max-w-4xl mx-auto">
           <p className="text-base md:text-lg text-[var(--text-secondary)] leading-relaxed mb-5">
-            I'm a <span className="text-[var(--text-primary)] font-medium">Backend Developer</span> specializing in 
+            I&apos;m a <span className="text-[var(--text-primary)] font-medium">Backend Developer</span> specializing in 
             <span className="text-[var(--accent-primary)]"> production-scale AI-integrated backend systems</span>. 
             I have hands-on experience building an internal QA Engine used in production that automated 
             technical question generation, reducing operational cost by <span className="text-[var(--accent-tertiary)] font-semibold">95%</span> and 
@@ -14,7 +14,7 @@ export default function About() {
           </p>
           
           <p className="text-base md:text-lg text-[var(--text-secondary)] leading-relaxed mb-6">
-            I'm experienced in designing <span className="text-[var(--text-primary)] font-medium">fault-tolerant architectures</span> using 
+            I&apos;m experienced in designing <span className="text-[var(--text-primary)] font-medium">fault-tolerant architectures</span> using 
             Python, PostgreSQL, concurrency control, and multi-AI integration. My work involves building 
             robust backend systems that can handle autonomous long-running execution with features like 
             lease-based locking, crash recovery, and deterministic ID generation.

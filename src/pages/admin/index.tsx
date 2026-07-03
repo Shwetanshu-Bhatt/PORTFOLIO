@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import type { Project, SkillCategory, Experience, Education, Personal } from '@/data';
 import initialProjects from '@/data/projects.json';
@@ -17,12 +18,12 @@ const typedEducation = initialEducation as { education: Education[] };
 const typedPersonal = initialPersonal as Personal;
 
 type Tab = 'projects' | 'skills' | 'experience' | 'education' | 'personal';
+type EducationType = Education['type'];
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('projects');
-  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
   // Data states
@@ -111,9 +112,9 @@ export default function AdminDashboard() {
               <h1 className="text-lg font-semibold text-[var(--text-primary)]">Admin Panel</h1>
             </div>
             <div className="flex items-center gap-3">
-              <a href="/" target="_blank" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+              <Link href="/" target="_blank" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
                 View Site →
-              </a>
+              </Link>
               <button onClick={logout} className="text-sm text-red-400 hover:text-red-300 transition-colors">
                 Logout
               </button>
@@ -200,7 +201,7 @@ function ProjectsEditor({ projects, setProjects }: { projects: Project[]; setPro
     setProjects([...projects, newProject]);
   };
 
-  const updateProject = (index: number, field: keyof Project, value: any) => {
+  const updateProject = <K extends keyof Project>(index: number, field: K, value: Project[K]) => {
     const updated = [...projects];
     updated[index] = { ...updated[index], [field]: value };
     setProjects(updated);
@@ -281,7 +282,7 @@ function SkillsEditor({ skills, setSkills }: { skills: SkillCategory[]; setSkill
     setSkills([...skills, newCategory]);
   };
 
-  const updateCategory = (index: number, field: keyof SkillCategory, value: any) => {
+  const updateCategory = <K extends keyof SkillCategory>(index: number, field: K, value: SkillCategory[K]) => {
     const updated = [...skills];
     updated[index] = { ...updated[index], [field]: value };
     setSkills(updated);
@@ -352,7 +353,7 @@ function ExperienceEditor({ experiences, setExperiences }: { experiences: Experi
     setExperiences([...experiences, newExp]);
   };
 
-  const updateExperience = (index: number, field: keyof Experience, value: any) => {
+  const updateExperience = <K extends keyof Experience>(index: number, field: K, value: Experience[K]) => {
     const updated = [...experiences];
     updated[index] = { ...updated[index], [field]: value };
     setExperiences(updated);
@@ -435,7 +436,7 @@ function EducationEditor({ education, setEducation }: { education: Education[]; 
     setEducation([...education, newEdu]);
   };
 
-  const updateEducation = (index: number, field: keyof Education, value: any) => {
+  const updateEducation = <K extends keyof Education>(index: number, field: K, value: Education[K]) => {
     const updated = [...education];
     updated[index] = { ...updated[index], [field]: value };
     setEducation(updated);
@@ -479,7 +480,7 @@ function EducationEditor({ education, setEducation }: { education: Education[]; 
             />
             <select
               value={edu.type}
-              onChange={(e) => updateEducation(index, 'type', e.target.value)}
+              onChange={(e) => updateEducation(index, 'type', e.target.value as EducationType)}
               className="input-field"
             >
               <option value="degree">Degree</option>

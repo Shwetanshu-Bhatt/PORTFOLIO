@@ -24,6 +24,10 @@ interface TouchPoint {
   id: number;
 }
 
+type DeviceOrientationEventWithPermission = typeof DeviceOrientationEvent & {
+  requestPermission?: () => Promise<PermissionState>;
+};
+
 export default function NeuralNetworkBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
@@ -168,13 +172,14 @@ export default function NeuralNetworkBackground() {
 
     if ('DeviceOrientationEvent' in window) {
       const requestOrientationPermission = async () => {
-        if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+        const OrientationEvent = DeviceOrientationEvent as DeviceOrientationEventWithPermission;
+        if (typeof OrientationEvent.requestPermission === 'function') {
           try {
-            const permission = await (DeviceOrientationEvent as any).requestPermission();
+            const permission = await OrientationEvent.requestPermission();
             if (permission === 'granted') {
               window.addEventListener('deviceorientation', handleDeviceOrientation);
             }
-          } catch (err) {
+          } catch {
             console.log('Device orientation permission denied');
           }
         } else {
@@ -231,7 +236,6 @@ export default function NeuralNetworkBackground() {
 
         const connectionDistance = 120; // Reduced from 150
         const mouseConnectionDistance = 200; // Reduced from 250
-        const nodeColor = isDark ? 'rgba(99, 102, 241, 0.16)' : 'rgba(0, 113, 227, 0.4)';
         const pulseColor = isDark ? 'rgba(99, 102, 241, 0.32)' : 'rgba(0, 113, 227, 0.56)';
 
         // Batch draw operations
