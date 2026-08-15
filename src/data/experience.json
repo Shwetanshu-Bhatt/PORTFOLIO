@@ -12,7 +12,7 @@
         "Integrated multiple AI providers (Groq, OpenAI, Gemini) with validation and correction layers",
         "Designed fault-tolerant, database-driven architecture capable of autonomous long-running execution"
       ],
-      "highlights": ["95% Cost Reduction", "90% Time Reduction", "Multi-AI Integration"]
+      "highlights": ["90% Time Reduction", "Multi-AI Integration", "Fault-Tolerant Pipelines"]
     }
   ]
 }

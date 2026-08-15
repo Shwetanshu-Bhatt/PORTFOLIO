@@ -34,7 +34,7 @@ const seoPagesData: Record<string, {
     description: 'Expert backend developer in Dehradun specializing in Python, PostgreSQL, REST APIs, and fault-tolerant architectures. Building production-scale backend systems for businesses.',
     keywords: ['backend developer dehradun', 'python developer dehradun', 'api developer dehradun', 'database developer dehradun'],
     h1: 'Professional Backend Developer in Dehradun',
-    content: 'Specialized backend development services in Dehradun. I build robust, scalable backend systems using Python, PostgreSQL, and modern API architectures. My fault-tolerant designs have reduced operational costs by 95% for clients.',
+    content: 'Specialized backend development services in Dehradun. I build robust, scalable backend systems using Python, PostgreSQL, and modern API architectures with a focus on resilience and clarity.',
     cta: 'Hire Backend Developer'
   },
   'python-developer-dehradun': {
@@ -91,10 +91,10 @@ const seoPagesData: Record<string, {
   // Personal Brand Pages
   'shwetanshu-bhatt': {
     title: 'Shwetanshu Bhatt | Backend Developer & AI Systems Expert | Dehradun, Uttarakhand',
-    description: 'Shwetanshu Bhatt - Professional backend developer and AI systems expert based in Dehradun, Uttarakhand. Building production-scale AI-integrated backend systems. Reduced operational costs by 95%.',
+    description: 'Shwetanshu Bhatt - Professional backend developer and AI systems expert based in Dehradun, Uttarakhand. Building production-scale AI-integrated backend systems with fault-tolerant architectures.',
     keywords: ['shwetanshu bhatt', 'shwetanshu bhatt developer', 'shwetanshu bhatt dehradun', 'shwetanshu bhatt uttarakhand'],
     h1: 'Shwetanshu Bhatt - Backend Developer & AI Systems Expert',
-    content: 'Hi, I am Shwetanshu Bhatt, a backend developer and AI systems expert based in Dehradun, Uttarakhand. I specialize in building production-scale AI-integrated backend systems that have reduced operational costs by 95% and generation time by 90%.',
+    content: 'Hi, I am Shwetanshu Bhatt, a backend developer and AI systems expert based in Dehradun, Uttarakhand. I specialize in building production-scale AI-integrated backend systems that have reduced generation time by 90%.',
     cta: 'View My Work'
   },
   'shwetanshu-bhatt-developer': {

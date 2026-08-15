@@ -10,9 +10,9 @@ export default function About() {
             I&apos;m a <strong>backend developer and AI systems engineer</strong> who likes turning ambiguous ideas into dependable products. My strongest work lives where product thinking meets infrastructure: data models, job orchestration, APIs, and the little decisions that keep a system observable and recoverable.
           </p>
           <div className="proof-grid" aria-label="Selected results">
-            <div className="proof-item"><span className="proof-value">95%</span><span className="proof-label">lower operating cost</span></div>
             <div className="proof-item"><span className="proof-value">90%</span><span className="proof-label">faster generation time</span></div>
             <div className="proof-item"><span className="proof-value">3×</span><span className="proof-label">AI providers integrated</span></div>
+            <div className="proof-item"><span className="proof-value">1</span><span className="proof-label">production engine shipped</span></div>
           </div>
         </div>
       </div>

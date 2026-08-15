@@ -3,10 +3,10 @@
     {
       "id": "qa-engine",
       "title": "QA Engine",
-      "description": "Production-scale backend system to autonomously generate and validate technical MCQs. Reduced question generation cost by 95% and generation time by 90%.",
+      "description": "Production-scale backend system to autonomously generate and validate technical MCQs. Reduced generation time by 90%.",
       "tech": ["Python", "PostgreSQL", "Asyncio", "Groq API", "OpenAI API", "Gemini API"],
       "link": "#",
-      "stats": ["95% Cost Reduction", "90% Time Reduction"]
+      "stats": ["90% Time Reduction", "Fault-Tolerant Pipeline"]
     },
     {
       "id": "ai-stock-predictor",

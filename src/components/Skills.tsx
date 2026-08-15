@@ -7,7 +7,7 @@ export default function Skills() {
         <div className="section-index" aria-hidden="true">02</div>
         <div>
           <div className="section-mark">Working stack</div>
-          <h2 className="section-heading">Tools are <em>verbs.</em></h2>
+          <h2 className="section-heading">A stack for the <em>messy parts.</em></h2>
           <div className="skill-matrix">
             {skills.categories.map((category) => (
               <div className="skill-block" key={category.id}>
