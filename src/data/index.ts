@@ -13,6 +13,8 @@ export interface Project {
   tech: string[];
   link: string;
   stats: string[];
+  featured?: boolean;
+  image?: string;
 }
 
 export interface SkillCategory {

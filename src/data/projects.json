@@ -6,7 +6,9 @@
       "description": "Production-scale backend system to autonomously generate and validate technical MCQs. Reduced generation time by 90%.",
       "tech": ["Python", "PostgreSQL", "Asyncio", "Groq API", "OpenAI API", "Gemini API"],
       "link": "#",
-      "stats": ["90% Time Reduction", "Fault-Tolerant Pipeline"]
+      "stats": ["90% Time Reduction", "Fault-Tolerant Pipeline"],
+      "featured": true,
+      "image": ""
     },
     {
       "id": "ai-stock-predictor",

@@ -3,6 +3,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import Image from 'next/image';
 import type { Project, SkillCategory, Experience, Education, Personal } from '@/data';
 import initialProjects from '@/data/projects.json';
 import initialSkills from '@/data/skills.json';
@@ -178,7 +179,9 @@ function ProjectsEditor({ projects, setProjects }: { projects: Project[]; setPro
       description: '',
       tech: [],
       link: '#',
-      stats: []
+      stats: [],
+      featured: projects.length === 0,
+      image: ''
     };
     setProjects([...projects, newProject]);
   };
@@ -193,6 +196,26 @@ function ProjectsEditor({ projects, setProjects }: { projects: Project[]; setPro
     setProjects(projects.filter((_, i) => i !== index));
   };
 
+  const setFeatured = (index: number) => {
+    setProjects(projects.map((project, projectIndex) => ({ ...project, featured: projectIndex === index })));
+  };
+
+  const uploadProjectImage = async (index: number, file?: File) => {
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 3 * 1024 * 1024) {
+      window.alert('Choose a JPG, PNG, or WebP image smaller than 3 MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const res = await fetch('/api/admin/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageData: reader.result, folder: 'portfolio/projects' }) });
+      const data = await res.json();
+      if (!res.ok) return window.alert(data.error || 'Image upload failed.');
+      updateProject(index, 'image', data.url);
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -204,6 +227,7 @@ function ProjectsEditor({ projects, setProjects }: { projects: Project[]; setPro
       {projects.map((project, index) => (
         <div key={project.id} className="card">
           <div className="admin-card-heading"><span>Project {String(index + 1).padStart(2, '0')}</span><strong>{project.title || 'Untitled project'}</strong></div>
+          <div className="admin-project-feature"><div><strong>{project.featured ? 'Featured project' : 'Standard project'}</strong><span>{project.featured ? 'Shown in the large highlighted layout.' : 'Shown in the regular project grid.'}</span></div><button type="button" className={project.featured ? 'is-featured' : ''} onClick={() => setFeatured(index)}>{project.featured ? 'Currently featured' : 'Make featured'}</button></div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <AdminField label="Project title"><input
               type="text"
@@ -212,6 +236,7 @@ function ProjectsEditor({ projects, setProjects }: { projects: Project[]; setPro
               placeholder="Project Title"
               className="input-field"
             /></AdminField>
+            <AdminField label="Project image" hint="Optional. Used in the featured layout; JPG, PNG, or WebP up to 3 MB." wide><div className="admin-project-image-control"><input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => uploadProjectImage(index, e.target.files?.[0])} />{project.image && <><Image src={project.image} alt="Project preview" width={640} height={360} unoptimized /><button type="button" onClick={() => updateProject(index, 'image', '')}>Remove image</button></>}</div></AdminField>
             <AdminField label="Project link" hint="Use # when there is no public link yet."><input
               type="text"
               value={project.link}
