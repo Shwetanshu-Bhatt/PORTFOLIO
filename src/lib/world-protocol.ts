@@ -26,12 +26,14 @@ export interface WorldPlayerState {
 export type WorldClientEvent =
   | { type: 'join'; player: Omit<WorldPlayerState, 'updatedAt'> }
   | { type: 'state'; player: Omit<WorldPlayerState, 'name' | 'color' | 'updatedAt'> }
-  | { type: 'collision'; targetId: string; impulseX: number; impulseZ: number };
+  | { type: 'collision'; targetId: string; impulseX: number; impulseZ: number }
+  | { type: 'rail_break'; railId: number };
 
 export type WorldServerEvent =
   | { type: 'snapshot'; players: WorldPlayerState[]; maxPlayers: number }
   | { type: 'player'; player: WorldPlayerState }
   | { type: 'leave'; id: string }
   | { type: 'impact'; targetId: string; sourceId: string; impulseX: number; impulseZ: number }
+  | { type: 'rail_break'; railId: number; regenerateAt: number }
   | { type: 'room_full'; maxPlayers: number }
   | { type: 'unavailable' };

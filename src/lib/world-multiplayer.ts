@@ -14,7 +14,7 @@ const PLAYERS_KEY = 'portfolio:world:players';
 const PRESENCE_KEY = 'portfolio:world:presence';
 const STALE_AFTER_MS = 12_000;
 
-type Session = { id: string | null; lastUpdate: number; lastImpact: number };
+type Session = { id: string | null; lastUpdate: number; lastImpact: number; lastRailBreak: number };
 
 const sockets = new Map<WebSocket, Session>();
 let publisher: Redis | null = null;
@@ -188,6 +188,19 @@ async function handleMessage(ws: WebSocket, data: RawData) {
     return;
   }
 
+  if (event.type === 'rail_break') {
+    const now = Date.now();
+    if (!session.id || now - session.lastRailBreak < 250
+      || !Number.isInteger(event.railId) || event.railId < 0 || event.railId > 31) return;
+    session.lastRailBreak = now;
+    await publish(redis, {
+      type: 'rail_break',
+      railId: event.railId,
+      regenerateAt: now + 5_000 + Math.floor(Math.random() * 5_001),
+    });
+    return;
+  }
+
   if (!session.id || event.player.id !== session.id) return;
   const now = Date.now();
   if (now - session.lastUpdate < WORLD_STATE_INTERVAL_MS - 10 || !validPlayer(event.player)) return;
@@ -205,7 +218,7 @@ async function handleMessage(ws: WebSocket, data: RawData) {
 
 export function registerWorldSocket(ws: WebSocket) {
   const redis = getPublisher();
-  sockets.set(ws, { id: null, lastUpdate: 0, lastImpact: 0 });
+  sockets.set(ws, { id: null, lastUpdate: 0, lastImpact: 0, lastRailBreak: 0 });
 
   if (!redis) {
     send(ws, { type: 'unavailable' });

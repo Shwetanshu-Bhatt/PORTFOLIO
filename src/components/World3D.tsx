@@ -48,23 +48,27 @@ interface CircularObstacle {
 }
 
 interface GuardRailCollider {
+  id: number;
   ax: number;
   az: number;
   bx: number;
   bz: number;
   inwardX: number;
   inwardZ: number;
+  group: THREE.Group;
+  active: boolean;
+  regenerateAt: number;
 }
 
 const TRACK_WIDTH = 16;
 const TRACK_POINTS: ReadonlyArray<readonly [number, number]> = [
-  [0, -125], [72, -112], [118, -72], [132, -18], [118, 42], [82, 92],
-  [28, 120], [-34, 112], [-78, 82], [-92, 40], [-64, 10], [-18, 2],
-  [38, 12], [70, 42], [44, 70], [2, 62], [-34, 38], [-82, 30],
-  [-125, 5], [-132, -48], [-102, -94], [-52, -120],
+  [0, -125], [58, -120], [105, -92], [132, -56], [114, -25], [133, 8],
+  [112, 50], [78, 87], [35, 113], [-15, 122], [-60, 110], [-98, 82],
+  [-125, 45], [-108, 15], [-128, -18], [-112, -60], [-78, -100], [-42, -112],
+  [-20, -94],
 ];
-const TRACK_SPAWN = { x: 0, z: -125, rotation: Math.atan2(72, 13) };
-const GUARDED_TRACK_SEGMENTS = new Set([2, 3, 8, 9, 12, 13, 17, 18]);
+const TRACK_SPAWN = { x: 0, z: -125, rotation: Math.atan2(58, 5) };
+const HARD_TURN_POINTS = [3, 4, 5, 12, 13, 14, 17, 18];
 
 function distanceToTrack(x: number, z: number) {
   let closest = Infinity;
@@ -306,6 +310,23 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     const guardRailMaterial = new THREE.MeshStandardMaterial({ color: 0xb7c0ca, roughness: 0.42, metalness: 0.78 });
     const guardRailPostMaterial = new THREE.MeshStandardMaterial({ color: 0x68717d, roughness: 0.58, metalness: 0.62 });
     guardRailCollidersRef.current = [];
+    const guardedSegmentSides = new Map<number, Set<number>>();
+    HARD_TURN_POINTS.forEach((turnIndex) => {
+      const previousIndex = (turnIndex - 1 + TRACK_POINTS.length) % TRACK_POINTS.length;
+      const [previousX, previousZ] = TRACK_POINTS[previousIndex];
+      const [turnX, turnZ] = TRACK_POINTS[turnIndex];
+      const [nextX, nextZ] = TRACK_POINTS[(turnIndex + 1) % TRACK_POINTS.length];
+      const incomingX = turnX - previousX;
+      const incomingZ = turnZ - previousZ;
+      const outgoingX = nextX - turnX;
+      const outgoingZ = nextZ - turnZ;
+      const outsideSide = Math.sign(incomingX * outgoingZ - incomingZ * outgoingX) || 1;
+      [previousIndex, turnIndex].forEach((segmentIndex) => {
+        const sides = guardedSegmentSides.get(segmentIndex) || new Set<number>();
+        sides.add(outsideSide);
+        guardedSegmentSides.set(segmentIndex, sides);
+      });
+    });
 
     TRACK_POINTS.forEach(([ax, az], index) => {
       const [bx, bz] = TRACK_POINTS[(index + 1) % TRACK_POINTS.length];
@@ -349,36 +370,43 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         scene.add(marker);
       }
 
-      if (GUARDED_TRACK_SEGMENTS.has(index)) {
-        const railStart = 0.04;
-        const railEnd = 0.96;
+      const guardedSides = guardedSegmentSides.get(index);
+      if (guardedSides) {
+        const railStart = 0.15;
+        const railEnd = 0.85;
         const railLength = length * (railEnd - railStart);
-        [-1, 1].forEach((side) => {
+        guardedSides.forEach((side) => {
           const offset = side * (TRACK_WIDTH / 2 + 0.8);
           const railAx = ax + dx * railStart + normalX * offset;
           const railAz = az + dz * railStart + normalZ * offset;
           const railBx = ax + dx * railEnd + normalX * offset;
           const railBz = az + dz * railEnd + normalZ * offset;
+          const railGroup = new THREE.Group();
           const rail = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.62, railLength), guardRailMaterial);
           rail.position.set((railAx + railBx) / 2, 0.72, (railAz + railBz) / 2);
           rail.rotation.y = angle;
           rail.castShadow = true;
-          scene.add(rail);
+          railGroup.add(rail);
 
           for (let distance = 1; distance < railLength; distance += 5.5) {
             const t = distance / railLength;
             const post = new THREE.Mesh(new THREE.BoxGeometry(0.38, 1.25, 0.38), guardRailPostMaterial);
             post.position.set(railAx + (railBx - railAx) * t, 0.62, railAz + (railBz - railAz) * t);
             post.castShadow = true;
-            scene.add(post);
+            railGroup.add(post);
           }
+          scene.add(railGroup);
           guardRailCollidersRef.current.push({
+            id: guardRailCollidersRef.current.length,
             ax: railAx,
             az: railAz,
             bx: railBx,
             bz: railBz,
             inwardX: -normalX * side,
             inwardZ: -normalZ * side,
+            group: railGroup,
+            active: true,
+            regenerateAt: 0,
           });
         });
       }
@@ -1025,6 +1053,13 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       });
 
       guardRailCollidersRef.current.forEach((rail) => {
+        if (!rail.active) {
+          if (Date.now() >= rail.regenerateAt) {
+            rail.active = true;
+            rail.group.visible = true;
+          }
+          return;
+        }
         const dx = rail.bx - rail.ax;
         const dz = rail.bz - rail.az;
         const lengthSquared = dx * dx + dz * dz;
@@ -1032,6 +1067,19 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         const closestX = rail.ax + dx * t;
         const closestZ = rail.az + dz * t;
         if (Math.hypot(body.position.x - closestX, body.position.z - closestZ) < 1.55) {
+          const impactSpeed = -body.velocity.dot(collisionNormal.set(rail.inwardX, 0, rail.inwardZ));
+          if (impactSpeed > 70 / 3.6) {
+            rail.active = false;
+            rail.group.visible = false;
+            rail.regenerateAt = Date.now() + 7_500;
+            body.velocity.multiplyScalar(0.72);
+            body.steer *= 0.72;
+            const socket = multiplayerSocketRef.current;
+            if (socket?.readyState === WebSocket.OPEN) {
+              socket.send(JSON.stringify({ type: 'rail_break', railId: rail.id }));
+            }
+            return;
+          }
           body.position.x = closestX + rail.inwardX * 1.57;
           body.position.z = closestZ + rail.inwardZ * 1.57;
           resolveStaticImpact(rail.inwardX, rail.inwardZ);
@@ -1279,6 +1327,13 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         } else if (event.type === 'leave') {
           removeRemote(event.id);
           setPlayerCount(remotePlayersRef.current.size + 1);
+        } else if (event.type === 'rail_break') {
+          const rail = guardRailCollidersRef.current.find((candidate) => candidate.id === event.railId);
+          if (rail) {
+            rail.active = false;
+            rail.group.visible = false;
+            rail.regenerateAt = event.regenerateAt;
+          }
         } else if (event.type === 'room_full') {
           reconnectAllowed = false;
           setMultiplayerStatus('full');
