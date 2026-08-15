@@ -215,14 +215,6 @@ const seoPagesData: Record<string, {
     content: 'Feel free to contact me for any web development, backend development, or AI integration projects. I am based in Dehradun, Uttarakhand, and work with clients globally.',
     cta: 'Send a Message'
   },
-  'resume': {
-    title: 'Resume | Shwetanshu Bhatt - Backend Developer & AI Systems Expert',
-    description: 'View the resume of Shwetanshu Bhatt - Backend Developer with expertise in Python, PostgreSQL, Next.js, and AI Integration.',
-    keywords: ['resume', 'cv', 'shwetanshu bhatt resume'],
-    h1: 'Shwetanshu Bhatt - Resume',
-    content: 'Download my resume to learn more about my experience, skills, and achievements in backend development and AI systems.',
-    cta: 'Download Resume'
-  },
   'blog': {
     title: 'Blog | Technical Articles & Insights | Shwetanshu Bhatt',
     description: 'Technical blog featuring articles on web development, Python, AI integration, and software engineering.',
@@ -296,7 +288,7 @@ export default function SEOPage() {
               "email": "shwetanshubhatt@gmail.com",
               "sameAs": [
                 "https://github.com/Shwetanshu-Bhatt",
-                "https://linkedin.com/in/shwetanshu-bhatt"
+                "https://www.linkedin.com/in/shwetanshu-bhatt-082167257/"
               ]
             })
           }}
@@ -484,7 +476,7 @@ export default function SEOPage() {
             <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Contact Information:</h3>
             <p style={{ color: '#aaa', marginBottom: '0.5rem' }}>📧 shwetanshubhatt@gmail.com</p>
             <p style={{ color: '#aaa', marginBottom: '0.5rem' }}>📍 Dehradun, Uttarakhand, India</p>
-            <p style={{ color: '#aaa' }}>🔗 <a href="https://github.com/Shwetanshu-Bhatt" style={{ color: '#00d4ff' }}>GitHub</a> | <a href="https://linkedin.com/in/shwetanshu-bhatt" style={{ color: '#00d4ff' }}>LinkedIn</a></p>
+            <p style={{ color: '#aaa' }}>🔗 <a href="https://github.com/Shwetanshu-Bhatt" style={{ color: '#00d4ff' }}>GitHub</a> | <a href="https://www.linkedin.com/in/shwetanshu-bhatt-082167257/" style={{ color: '#00d4ff' }}>LinkedIn</a></p>
           </section>
           
           {/* Footer */}

@@ -578,13 +578,6 @@ function PersonalEditor({ personal, setPersonal }: { personal: Personal; setPers
             placeholder="LinkedIn URL"
             className="input-field"
           /></AdminField>
-          <AdminField label="Resume path"><input
-            type="text"
-            value={personal.resume}
-            onChange={(e) => updateField('resume', e.target.value)}
-            placeholder="Resume Path"
-            className="input-field"
-          /></AdminField>
         </div>
       </div>
     </div>

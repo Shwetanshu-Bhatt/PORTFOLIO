@@ -14,7 +14,6 @@ export default function Contact() {
             <div className="social-row">
               <a href={personal.github} target="_blank" rel="noreferrer">GitHub ↗</a>
               <a href={personal.linkedin} target="_blank" rel="noreferrer">LinkedIn ↗</a>
-              <a href={personal.resume}>Resume ↗</a>
             </div>
           </div>
         </div>

@@ -50,7 +50,6 @@ export interface Personal {
   email: string;
   github: string;
   linkedin: string;
-  resume: string;
 }
 
 export interface PortfolioData {

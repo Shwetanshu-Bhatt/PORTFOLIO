@@ -188,14 +188,6 @@
     <lastmod>2026-03-09</lastmod>
   </url>
 
-  <!-- Resume Page -->
-  <url>
-    <loc>https://shwetanshubhatt.apsgroupco.com/resume/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <lastmod>2026-03-09</lastmod>
-  </url>
-
   <!-- Blog/Notes Section (if added in future) -->
   <url>
     <loc>https://shwetanshubhatt.apsgroupco.com/blog/</loc>
