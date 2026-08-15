@@ -22,7 +22,15 @@ function Brand() {
 export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const [hasReviews, setHasReviews] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   useEffect(() => { fetch('/api/reviews').then(res => res.json()).then(data => setHasReviews((data.reviews || []).length > 0)).catch(() => undefined); }, []);
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, []);
   const links = [...baseLinks, ...(hasReviews ? [["05", "Reviews", "reviews"]] : []), [hasReviews ? "06" : "05", "Contact", "contact"]];
 
   return (
@@ -44,15 +52,32 @@ export default function Navbar() {
         </div>
       </aside>
 
-      <header className="mobile-nav">
+      <header className={`mobile-nav${mobileMenuOpen ? ' is-open' : ''}`}>
         <Brand />
-        <div className="mobile-nav-links">
-          <a href="#projects">Work</a>
-          {hasReviews && <a href="#reviews">Reviews</a>}
-          <a href="#contact">Contact</a>
-          <button onClick={toggleTheme} type="button" aria-label="Toggle color theme">
-            {theme === "dark" ? "☼" : "◐"}
-          </button>
+        <button
+          aria-controls="mobile-navigation"
+          aria-expanded={mobileMenuOpen}
+          className="mobile-menu-toggle"
+          onClick={() => setMobileMenuOpen(open => !open)}
+          type="button"
+        >
+          <span>{mobileMenuOpen ? 'Close' : 'Menu'}</span>
+          <i aria-hidden="true" />
+        </button>
+        <div className="mobile-nav-menu" id="mobile-navigation">
+          <nav className="mobile-nav-links" aria-label="Mobile navigation">
+            {links.map(([number, label, id]) => (
+              <a href={`#${id}`} key={id} onClick={() => setMobileMenuOpen(false)}>
+                <span>{number}</span>{label}
+              </a>
+            ))}
+          </nav>
+          <div className="mobile-nav-meta">
+            <span className="nav-status"><i className="status-dot" /> Open to work</span>
+            <button onClick={toggleTheme} type="button">
+              {theme === "dark" ? "Light mode" : "Dark mode"}
+            </button>
+          </div>
         </div>
       </header>
     </>
