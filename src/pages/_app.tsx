@@ -1,14 +1,9 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import Head from "next/head";
-import { useRouter } from "next/router";
 import { ThemeProvider } from "@/hooks/useTheme";
-import CustomCursor from "@/components/CustomCursor";
 
 function MyApp({ Component, pageProps }: AppProps) {
-  const router = useRouter();
-  const isAdminPage = router.pathname.startsWith('/admin');
-
   return (
     <>
       <Head>
@@ -18,7 +13,6 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name="robots" content="index, follow" />
       </Head>
       <ThemeProvider>
-        {!isAdminPage && <CustomCursor />}
         <Component {...pageProps} />
       </ThemeProvider>
     </>

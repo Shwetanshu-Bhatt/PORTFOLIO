@@ -1,106 +1,51 @@
-import { projects } from '@/data';
+import { projects } from "@/data";
 
 export default function Projects() {
+  const [featured, ...rest] = projects.projects;
+
   return (
-    <section id="Projects" className="py-24 px-6">
-      <div className="container">
-        <h2 className="section-title mb-2">Projects</h2>
-        <p className="text-[var(--text-secondary)] text-center mb-12 max-w-2xl mx-auto">
-          Building scalable solutions with modern technologies
-        </p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.projects.map((project, index) => (
-            project.link !== "#" ? (
-            <a 
-              key={project.id || index} 
-              href={project.link}
-              className="card block group h-full flex flex-col"
-            >
-              <h3 className="text-xl font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors duration-300">
-                {project.title}
-              </h3>
-              
-              <p className="text-[var(--text-secondary)] mt-3 mb-4 text-sm leading-relaxed flex-grow">
-                {project.description}
-              </p>
-              
-              <div className="flex flex-wrap gap-2 mb-4">
-                {project.tech.map((t, tIndex) => (
-                  <span 
-                    key={tIndex}
-                    className="text-xs px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-primary)]/50 text-[var(--text-secondary)] transition-all duration-300 group-hover:border-[var(--accent-primary)]/30 group-hover:text-[var(--text-primary)]"
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-              
-              {project.stats.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-3 border-t border-[var(--border-color)]">
-                  {project.stats.map((stat, sIndex) => (
-                    <span 
-                      key={sIndex}
-                      className="text-xs px-2 py-1 rounded bg-[var(--accent-tertiary)]/10 text-[var(--accent-tertiary)] border border-[var(--accent-tertiary)]/20"
-                    >
-                      {stat}
-                    </span>
-                  ))}
-                </div>
-              )}
-              
-              <div className="mt-4 flex items-center text-[var(--accent-primary)] text-sm font-medium group-hover:gap-2 transition-all duration-300">
-                View Project 
-                <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </a>
-            ) : (
-            <div 
-              key={project.id || index}
-              className="card group h-full flex flex-col"
-            >
-              <h3 className="text-xl font-semibold text-[var(--text-primary)]">
-                {project.title}
-              </h3>
-              
-              <p className="text-[var(--text-secondary)] mt-3 mb-4 text-sm leading-relaxed flex-grow">
-                {project.description}
-              </p>
-              
-              <div className="flex flex-wrap gap-2 mb-4">
-                {project.tech.map((t, tIndex) => (
-                  <span 
-                    key={tIndex}
-                    className="text-xs px-2 py-1 rounded border border-[var(--border-color)] bg-[var(--bg-primary)]/50 text-[var(--text-secondary)]"
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-              
-              {project.stats.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-3 border-t border-[var(--border-color)]">
-                  {project.stats.map((stat, sIndex) => (
-                    <span 
-                      key={sIndex}
-                      className="text-xs px-2 py-1 rounded bg-[var(--accent-tertiary)]/10 text-[var(--accent-tertiary)] border border-[var(--accent-tertiary)]/20"
-                    >
-                      {stat}
-                    </span>
-                  ))}
-                </div>
-              )}
-              
-              <div className="mt-4">
-              </div>
+    <section className="site-section" id="projects">
+      <div className="section-inner">
+        <div className="projects-heading">
+          <div>
+            <div className="section-mark">Selected work</div>
+            <h2 className="section-heading">Things I&apos;ve <em>shipped.</em></h2>
+          </div>
+          <p className="projects-intro">A small archive of production-minded builds, experiments, and systems that earned their complexity.</p>
+        </div>
+
+        <article className="featured-project">
+          <div className="featured-project-copy">
+            <div>
+              <span className="case-number">Case study / 001</span>
+              <h3>QA <em>Engine</em></h3>
+              <p className="project-description">{featured.description} The interesting part was not the model call — it was making the whole pipeline resumable, validated, and boring to operate.</p>
             </div>
-            )
-          ))}
+            <div className="project-meta">
+              {featured.tech.slice(0, 6).map((tech) => <span key={tech}>{tech}</span>)}
+            </div>
+          </div>
+          <div className="featured-project-visual" aria-label="QA Engine abstract visual">
+            <span className="visual-label">Signal / stable</span>
+            <span className="visual-code">QUEUE  →  WORKER<br />VALIDATE  →  SHIP<br /><br />STATUS: GREEN</span>
+          </div>
+        </article>
+
+        <div className="project-list">
+          {rest.map((project, index) => {
+            const card = (
+              <article className="project-card" key={project.id}>
+                <span className="case-number">Case study / {String(index + 2).padStart(3, "0")}</span>
+                <h4>{project.title}</h4>
+                <p>{project.description}</p>
+                <div className="project-card-footer"><span>{project.tech.slice(0, 2).join(" / ")}</span><span>↗</span></div>
+              </article>
+            );
+
+            return project.link !== "#" ? <a className="project-card-link" href={project.link} key={project.id} target="_blank" rel="noreferrer">{card}</a> : card;
+          })}
         </div>
       </div>
     </section>
   );
 }
-
