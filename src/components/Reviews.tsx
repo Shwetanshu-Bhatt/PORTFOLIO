@@ -1,0 +1,11 @@
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
+
+type Review = { id: string; reviewer_name: string; company?: string; project_title: string; project_link?: string; image_url?: string; rating: number; review_text: string; public_email?: string; public_phone?: string };
+
+export default function Reviews() {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  useEffect(() => { fetch('/api/reviews').then(res => res.json()).then(data => setReviews(data.reviews || [])).catch(() => undefined); }, []);
+  if (!reviews.length) return null;
+  return <section className="site-section reviews-section" id="reviews"><div className="section-inner"><div className="section-mark">Verified client reviews</div><h2 className="section-heading">Work, in their <em>words.</em></h2><p className="reviews-intro">Feedback from clients invited through a private, project-specific review link.</p><div className="reviews-list">{reviews.map(review => <article className={`review-card${review.image_url ? ' has-image' : ''}`} key={review.id}>{review.image_url && (review.project_link ? <a className="review-card-image" href={review.project_link} target="_blank" rel="noreferrer"><Image src={review.image_url} alt={`Client-provided image for ${review.project_title}`} width={640} height={480} unoptimized /></a> : <div className="review-card-image"><Image src={review.image_url} alt={`Client-provided image for ${review.project_title}`} width={640} height={480} unoptimized /></div>)}<div className="review-card-content"><span className="review-stars" aria-label={`${review.rating} out of 5 stars`}>{'★'.repeat(review.rating)}</span><blockquote>“{review.review_text}”</blockquote><footer><div><strong>{review.reviewer_name}</strong>{review.company && <span>{review.company}</span>}<small>Verified client · {review.project_title}</small></div><div className="review-card-actions">{review.project_link && <a className="review-project-link" href={review.project_link} target="_blank" rel="noreferrer">View project <span>↗</span></a>}<div className="review-contact">{review.public_email && <a href={`mailto:${review.public_email}`}>{review.public_email}</a>}{review.public_phone && <a href={`tel:${review.public_phone.replace(/\s/g, '')}`}>{review.public_phone}</a>}</div></div></footer></div></article>)}</div></div></section>;
+}

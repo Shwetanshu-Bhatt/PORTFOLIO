@@ -1,16 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { ADMIN_COOKIE_NAME, createAdminSession, destroyAdminSession, isAdmin, verifyAdminPassword } from '@/lib/admin-auth';
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-const AUTH_COOKIE_NAME = 'admin_auth';
-const AUTH_TOKEN = 'portfolio_admin_token_' + Math.random().toString(36).substring(7);
-
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     const { password } = req.body;
     
-    if (password === ADMIN_PASSWORD) {
+    const adminId = await verifyAdminPassword(String(password || ''));
+    if (adminId) {
+      const token = await createAdminSession(adminId);
       // Set HTTP-only cookie
-      res.setHeader('Set-Cookie', `${AUTH_COOKIE_NAME}=${AUTH_TOKEN}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400`);
+      res.setHeader('Set-Cookie', `${ADMIN_COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
       return res.status(200).json({ success: true });
     }
     
@@ -19,15 +18,14 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   
   if (req.method === 'DELETE') {
     // Logout
-    res.setHeader('Set-Cookie', `${AUTH_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`);
+    await destroyAdminSession(req);
+    res.setHeader('Set-Cookie', `${ADMIN_COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`);
     return res.status(200).json({ success: true });
   }
   
   if (req.method === 'GET') {
     // Check auth status
-    const cookie = req.headers.cookie;
-    const isAuthenticated = cookie?.includes(`${AUTH_COOKIE_NAME}=${AUTH_TOKEN}`);
-    return res.status(200).json({ authenticated: isAuthenticated });
+    return res.status(200).json({ authenticated: await isAdmin(req) });
   }
   
   return res.status(405).json({ error: 'Method not allowed' });

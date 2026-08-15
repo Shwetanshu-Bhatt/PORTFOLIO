@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import type { Project, SkillCategory, Experience, Education, Personal } from '@/data';
@@ -9,6 +9,7 @@ import initialSkills from '@/data/skills.json';
 import initialExperience from '@/data/experience.json';
 import initialEducation from '@/data/education.json';
 import initialPersonal from '@/data/personal.json';
+import ReviewsManager from '@/components/admin/ReviewsManager';
 
 // Type assertions for JSON imports
 const typedProjects = initialProjects as { projects: Project[] };
@@ -17,8 +18,21 @@ const typedExperience = initialExperience as { experiences: Experience[] };
 const typedEducation = initialEducation as { education: Education[] };
 const typedPersonal = initialPersonal as Personal;
 
-type Tab = 'projects' | 'skills' | 'experience' | 'education' | 'personal';
+type Tab = 'projects' | 'skills' | 'experience' | 'education' | 'personal' | 'reviews';
 type EducationType = Education['type'];
+
+const tabInfo: Record<Tab, { label: string; description: string; icon: string }> = {
+  projects: { label: 'Projects', description: 'Manage the work shown in your portfolio.', icon: '▦' },
+  skills: { label: 'Skills', description: 'Group the tools and technologies you work with.', icon: '✦' },
+  experience: { label: 'Experience', description: 'Keep your professional timeline up to date.', icon: '◫' },
+  education: { label: 'Education', description: 'Manage degrees, diplomas, and education details.', icon: '◇' },
+  personal: { label: 'Profile', description: 'Update your headline, links, and contact information.', icon: '○' },
+  reviews: { label: 'Reviews', description: 'Invite verified clients and moderate submitted feedback.', icon: '★' },
+};
+
+function AdminField({ label, hint, wide, children }: { label: string; hint?: string; wide?: boolean; children: ReactNode }) {
+  return <label className={`admin-field${wide ? ' admin-field-wide' : ''}`}><span>{label}</span>{children}{hint && <small>{hint}</small>}</label>;
+}
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -32,6 +46,17 @@ export default function AdminDashboard() {
   const [experiences, setExperiences] = useState<Experience[]>(typedExperience.experiences);
   const [education, setEducation] = useState<Education[]>(typedEducation.education);
   const [personal, setPersonal] = useState<Personal>(typedPersonal);
+
+  const selectTab = (tab: Tab) => {
+    setActiveTab(tab);
+    void router.replace({ pathname: '/admin', query: tab === 'projects' ? {} : { section: tab } }, undefined, { shallow: true });
+  };
+
+  useEffect(() => {
+    if (!router.isReady) return;
+    const section = String(router.query.section || 'projects');
+    if (section in tabInfo) setActiveTab(section as Tab);
+  }, [router.isReady, router.query.section]);
 
   useEffect(() => {
     // Check authentication
@@ -59,7 +84,7 @@ export default function AdminDashboard() {
   const saveToLocalStorage = () => {
     const data = { projects, skills, experiences, education, personal };
     localStorage.setItem('portfolio_admin_data', JSON.stringify(data));
-    setMessage('Changes saved to localStorage!');
+    setMessage('Draft saved in this browser. Export JSON when you are ready to publish it.');
     setTimeout(() => setMessage(''), 3000);
   };
 
@@ -100,72 +125,28 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)]">
-      {/* Header */}
-      <header className="border-b border-[var(--border-color)] bg-[var(--bg-secondary)]/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent-primary)] to-[var(--accent-secondary)] flex items-center justify-center">
-                <span className="text-white font-bold text-sm">A</span>
-              </div>
-              <h1 className="text-lg font-semibold text-[var(--text-primary)]">Admin Panel</h1>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link href="/" target="_blank" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
-                View Site →
-              </Link>
-              <button onClick={logout} className="text-sm text-red-400 hover:text-red-300 transition-colors">
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="admin-shell">
+      <aside className="admin-sidebar">
+        <div className="admin-brand"><span>SB</span><div><strong>Portfolio</strong><small>Content studio</small></div></div>
+        <nav className="admin-nav" aria-label="Portfolio sections">
+          <p>Content</p>
+          {(['projects', 'skills', 'experience', 'education', 'personal'] as Tab[]).map((tab) => <button key={tab} onClick={() => selectTab(tab)} className={activeTab === tab ? 'is-active' : ''}><span>{tabInfo[tab].icon}</span>{tabInfo[tab].label}</button>)}
+          <p>Client work</p>
+          <button onClick={() => selectTab('reviews')} className={activeTab === 'reviews' ? 'is-active' : ''}><span>★</span> Reviews</button>
+        </nav>
+        <div className="admin-sidebar-footer"><Link href="/" target="_blank">View live portfolio <span>↗</span></Link><button onClick={logout}>Log out</button></div>
+      </aside>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Actions Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-          <div className="flex flex-wrap gap-2">
-            {(['projects', 'skills', 'experience', 'education', 'personal'] as Tab[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === tab
-                    ? 'bg-[var(--accent-primary)] text-white'
-                    : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={saveToLocalStorage}
-              className="px-4 py-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] text-sm font-medium hover:bg-[var(--border-color)] transition-colors"
-            >
-              Save to Browser
-            </button>
-            <button
-              onClick={exportJSON}
-              className="px-4 py-2 rounded-lg btn-primary text-sm"
-            >
-              Export JSON
-            </button>
-          </div>
-        </div>
+      <main className="admin-main">
+        <header className="admin-topbar"><div><span className="admin-eyebrow">{activeTab === 'reviews' ? 'Client proof' : 'Portfolio content'}</span><h1>{tabInfo[activeTab].label}</h1><p>{tabInfo[activeTab].description}</p></div>{activeTab !== 'reviews' && <div className="admin-actions"><button onClick={saveToLocalStorage} className="admin-secondary-button">Save draft</button><button onClick={exportJSON} className="admin-primary-button">Export to publish</button></div>}</header>
 
         {/* Message */}
         {message && (
-          <div className="mb-6 p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400">
-            {message}
-          </div>
+          <div className="admin-message"><span>✓</span>{message}</div>
         )}
 
         {/* Content Editors */}
-        <div className="space-y-6">
+        <div className="admin-content">
           {activeTab === 'projects' && (
             <ProjectsEditor projects={projects} setProjects={setProjects} />
           )}
@@ -181,8 +162,9 @@ export default function AdminDashboard() {
           {activeTab === 'personal' && (
             <PersonalEditor personal={personal} setPersonal={setPersonal} />
           )}
+          {activeTab === 'reviews' && <ReviewsManager />}
         </div>
-      </div>
+      </main>
     </div>
   );
 }
@@ -221,42 +203,43 @@ function ProjectsEditor({ projects, setProjects }: { projects: Project[]; setPro
       </div>
       {projects.map((project, index) => (
         <div key={project.id} className="card">
+          <div className="admin-card-heading"><span>Project {String(index + 1).padStart(2, '0')}</span><strong>{project.title || 'Untitled project'}</strong></div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
+            <AdminField label="Project title"><input
               type="text"
               value={project.title}
               onChange={(e) => updateProject(index, 'title', e.target.value)}
               placeholder="Project Title"
               className="input-field"
-            />
-            <input
+            /></AdminField>
+            <AdminField label="Project link" hint="Use # when there is no public link yet."><input
               type="text"
               value={project.link}
               onChange={(e) => updateProject(index, 'link', e.target.value)}
               placeholder="Project Link"
               className="input-field"
-            />
-            <textarea
+            /></AdminField>
+            <AdminField label="Description" wide><textarea
               value={project.description}
               onChange={(e) => updateProject(index, 'description', e.target.value)}
               placeholder="Description"
               rows={3}
               className="input-field md:col-span-2"
-            />
-            <input
+            /></AdminField>
+            <AdminField label="Technologies" hint="Separate each technology with a comma." wide><input
               type="text"
               value={project.tech.join(', ')}
               onChange={(e) => updateProject(index, 'tech', e.target.value.split(',').map(s => s.trim()))}
               placeholder="Technologies (comma separated)"
               className="input-field md:col-span-2"
-            />
-            <input
+            /></AdminField>
+            <AdminField label="Results or stats" hint="Optional. Example: 90% faster, 10k users." wide><input
               type="text"
               value={project.stats.join(', ')}
               onChange={(e) => updateProject(index, 'stats', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
               placeholder="Stats (comma separated, optional)"
               className="input-field md:col-span-2"
-            />
+            /></AdminField>
           </div>
           <button
             onClick={() => removeProject(index)}
@@ -302,15 +285,16 @@ function SkillsEditor({ skills, setSkills }: { skills: SkillCategory[]; setSkill
       </div>
       {skills.map((category, index) => (
         <div key={category.id} className="card">
+          <div className="admin-card-heading"><span>Skill group {String(index + 1).padStart(2, '0')}</span><strong>{category.title || 'Untitled category'}</strong></div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
+            <AdminField label="Category name"><input
               type="text"
               value={category.title}
               onChange={(e) => updateCategory(index, 'title', e.target.value)}
               placeholder="Category Title"
               className="input-field"
-            />
-            <select
+            /></AdminField>
+            <AdminField label="Accent color"><select
               value={category.color}
               onChange={(e) => updateCategory(index, 'color', e.target.value)}
               className="input-field"
@@ -318,14 +302,14 @@ function SkillsEditor({ skills, setSkills }: { skills: SkillCategory[]; setSkill
               <option value="var(--accent-primary)">Primary (Indigo)</option>
               <option value="var(--accent-secondary)">Secondary (Violet)</option>
               <option value="var(--accent-tertiary)">Tertiary (Purple)</option>
-            </select>
-            <input
+            </select></AdminField>
+            <AdminField label="Skills" hint="Separate each skill with a comma." wide><input
               type="text"
               value={category.skills.join(', ')}
               onChange={(e) => updateCategory(index, 'skills', e.target.value.split(',').map(s => s.trim()))}
               placeholder="Skills (comma separated)"
               className="input-field md:col-span-2"
-            />
+            /></AdminField>
           </div>
           <button
             onClick={() => removeCategory(index)}
@@ -373,42 +357,43 @@ function ExperienceEditor({ experiences, setExperiences }: { experiences: Experi
       </div>
       {experiences.map((exp, index) => (
         <div key={exp.id} className="card">
+          <div className="admin-card-heading"><span>Experience {String(index + 1).padStart(2, '0')}</span><strong>{exp.role || 'Untitled role'}</strong></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input
+            <AdminField label="Role"><input
               type="text"
               value={exp.role}
               onChange={(e) => updateExperience(index, 'role', e.target.value)}
               placeholder="Role"
               className="input-field"
-            />
-            <input
+            /></AdminField>
+            <AdminField label="Company"><input
               type="text"
               value={exp.company}
               onChange={(e) => updateExperience(index, 'company', e.target.value)}
               placeholder="Company"
               className="input-field"
-            />
-            <input
+            /></AdminField>
+            <AdminField label="Duration"><input
               type="text"
               value={exp.duration}
               onChange={(e) => updateExperience(index, 'duration', e.target.value)}
               placeholder="Duration"
               className="input-field"
-            />
-            <textarea
+            /></AdminField>
+            <AdminField label="Responsibilities" hint="Write one point per line." wide><textarea
               value={exp.description.join('\n')}
               onChange={(e) => updateExperience(index, 'description', e.target.value.split('\n'))}
               placeholder="Description points (one per line)"
               rows={5}
               className="input-field md:col-span-3"
-            />
-            <input
+            /></AdminField>
+            <AdminField label="Highlights" hint="Separate achievements with a comma." wide><input
               type="text"
               value={exp.highlights.join(', ')}
               onChange={(e) => updateExperience(index, 'highlights', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
               placeholder="Highlights (comma separated)"
               className="input-field md:col-span-3"
-            />
+            /></AdminField>
           </div>
           <button
             onClick={() => removeExperience(index)}
@@ -456,29 +441,30 @@ function EducationEditor({ education, setEducation }: { education: Education[]; 
       </div>
       {education.map((edu, index) => (
         <div key={edu.id} className="card">
+          <div className="admin-card-heading"><span>Education {String(index + 1).padStart(2, '0')}</span><strong>{edu.degree || 'Untitled qualification'}</strong></div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
+            <AdminField label="Degree or qualification"><input
               type="text"
               value={edu.degree}
               onChange={(e) => updateEducation(index, 'degree', e.target.value)}
               placeholder="Degree"
               className="input-field"
-            />
-            <input
+            /></AdminField>
+            <AdminField label="Institution"><input
               type="text"
               value={edu.institution}
               onChange={(e) => updateEducation(index, 'institution', e.target.value)}
               placeholder="Institution"
               className="input-field"
-            />
-            <input
+            /></AdminField>
+            <AdminField label="Duration"><input
               type="text"
               value={edu.duration}
               onChange={(e) => updateEducation(index, 'duration', e.target.value)}
               placeholder="Duration"
               className="input-field"
-            />
-            <select
+            /></AdminField>
+            <AdminField label="Education type"><select
               value={edu.type}
               onChange={(e) => updateEducation(index, 'type', e.target.value as EducationType)}
               className="input-field"
@@ -486,14 +472,14 @@ function EducationEditor({ education, setEducation }: { education: Education[]; 
               <option value="degree">Degree</option>
               <option value="diploma">Diploma</option>
               <option value="school">School</option>
-            </select>
-            <input
+            </select></AdminField>
+            <AdminField label="Details" hint="Optional. Example: CGPA 8.5." wide><input
               type="text"
               value={edu.details}
               onChange={(e) => updateEducation(index, 'details', e.target.value)}
               placeholder="Details (e.g., CGPA: 8.5)"
               className="input-field md:col-span-2"
-            />
+            /></AdminField>
           </div>
           <button
             onClick={() => removeEducation(index)}
@@ -518,62 +504,62 @@ function PersonalEditor({ personal, setPersonal }: { personal: Personal; setPers
       <h2 className="text-xl font-semibold text-[var(--text-primary)]">Personal Information</h2>
       <div className="card">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input
+          <AdminField label="Full name"><input
             type="text"
             value={personal.name}
             onChange={(e) => updateField('name', e.target.value)}
             placeholder="Full Name"
             className="input-field"
-          />
-          <input
+          /></AdminField>
+          <AdminField label="Professional title"><input
             type="text"
             value={personal.title}
             onChange={(e) => updateField('title', e.target.value)}
             placeholder="Title"
             className="input-field"
-          />
-          <input
+          /></AdminField>
+          <AdminField label="Short headline" wide><input
             type="text"
             value={personal.subtitle}
             onChange={(e) => updateField('subtitle', e.target.value)}
             placeholder="Subtitle"
             className="input-field md:col-span-2"
-          />
-          <textarea
+          /></AdminField>
+          <AdminField label="About you" wide><textarea
             value={personal.description}
             onChange={(e) => updateField('description', e.target.value)}
             placeholder="Description"
             rows={3}
             className="input-field md:col-span-2"
-          />
-          <input
+          /></AdminField>
+          <AdminField label="Email"><input
             type="email"
             value={personal.email}
             onChange={(e) => updateField('email', e.target.value)}
             placeholder="Email"
             className="input-field"
-          />
-          <input
+          /></AdminField>
+          <AdminField label="GitHub URL"><input
             type="text"
             value={personal.github}
             onChange={(e) => updateField('github', e.target.value)}
             placeholder="GitHub URL"
             className="input-field"
-          />
-          <input
+          /></AdminField>
+          <AdminField label="LinkedIn URL"><input
             type="text"
             value={personal.linkedin}
             onChange={(e) => updateField('linkedin', e.target.value)}
             placeholder="LinkedIn URL"
             className="input-field"
-          />
-          <input
+          /></AdminField>
+          <AdminField label="Resume path"><input
             type="text"
             value={personal.resume}
             onChange={(e) => updateField('resume', e.target.value)}
             placeholder="Resume Path"
             className="input-field"
-          />
+          /></AdminField>
         </div>
       </div>
     </div>

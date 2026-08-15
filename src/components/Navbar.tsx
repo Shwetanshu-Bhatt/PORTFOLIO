@@ -1,13 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useTheme } from "@/hooks/useTheme";
 
-const links = [
+const baseLinks = [
   ["01", "About", "about"],
   ["02", "Stack", "skills"],
   ["03", "Work", "experience"],
   ["04", "Projects", "projects"],
-  ["05", "Contact", "contact"],
 ];
 
 function Brand() {
@@ -21,6 +21,9 @@ function Brand() {
 
 export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
+  const [hasReviews, setHasReviews] = useState(false);
+  useEffect(() => { fetch('/api/reviews').then(res => res.json()).then(data => setHasReviews((data.reviews || []).length > 0)).catch(() => undefined); }, []);
+  const links = [...baseLinks, ...(hasReviews ? [["05", "Reviews", "reviews"]] : []), [hasReviews ? "06" : "05", "Contact", "contact"]];
 
   return (
     <>
@@ -45,6 +48,7 @@ export default function Navbar() {
         <Brand />
         <div className="mobile-nav-links">
           <a href="#projects">Work</a>
+          {hasReviews && <a href="#reviews">Reviews</a>}
           <a href="#contact">Contact</a>
           <button onClick={toggleTheme} type="button" aria-label="Toggle color theme">
             {theme === "dark" ? "☼" : "◐"}
