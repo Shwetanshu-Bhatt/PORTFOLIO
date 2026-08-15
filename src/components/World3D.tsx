@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import {
   WORLD_MAX_PLAYERS,
+  WORLD_PLAYER_COLORS,
   WORLD_STATE_INTERVAL_MS,
   type WorldPlayerState,
   type WorldServerEvent,
@@ -11,6 +12,10 @@ import {
 
 interface World3DProps {
   onBack?: () => void;
+}
+
+interface WorldGameProps extends World3DProps {
+  playerName: string;
 }
 
 interface BuildingData {
@@ -28,6 +33,8 @@ interface BuildingData {
 
 interface RemotePlayerVisual {
   group: THREE.Group;
+  paintMaterial: THREE.MeshStandardMaterial;
+  nameTag: THREE.Sprite;
   targetPosition: THREE.Vector3;
   targetRotation: number;
   speed: number;
@@ -40,6 +47,15 @@ interface CircularObstacle {
   radius: number;
 }
 
+interface GuardRailCollider {
+  ax: number;
+  az: number;
+  bx: number;
+  bz: number;
+  inwardX: number;
+  inwardZ: number;
+}
+
 const TRACK_WIDTH = 16;
 const TRACK_POINTS: ReadonlyArray<readonly [number, number]> = [
   [0, -125], [72, -112], [118, -72], [132, -18], [118, 42], [82, 92],
@@ -48,6 +64,7 @@ const TRACK_POINTS: ReadonlyArray<readonly [number, number]> = [
   [-125, 5], [-132, -48], [-102, -94], [-52, -120],
 ];
 const TRACK_SPAWN = { x: 0, z: -125, rotation: Math.atan2(72, 13) };
+const GUARDED_TRACK_SEGMENTS = new Set([2, 3, 8, 9, 12, 13, 17, 18]);
 
 function distanceToTrack(x: number, z: number) {
   let closest = Infinity;
@@ -66,7 +83,46 @@ function isPointOnTrack(x: number, z: number, margin = 0) {
   return distanceToTrack(x, z) <= TRACK_WIDTH / 2 + margin;
 }
 
-function createRemoteCar(color: number) {
+function normalizeDriverName(name: string) {
+  return name.trim().replace(/[^\p{L}\p{N} _-]/gu, '').replace(/\s+/g, ' ').slice(0, 18);
+}
+
+function createDriverNameTag(name: string, color: number) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 96;
+  const context = canvas.getContext('2d')!;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
+  const sprite = new THREE.Sprite(material);
+  sprite.position.set(0, 3.15, 0);
+  sprite.scale.set(5.4, 1.02, 1);
+
+  const update = (nextName: string, nextColor: number) => {
+    const colorHex = `#${nextColor.toString(16).padStart(6, '0')}`;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = 'rgba(7, 10, 20, 0.72)';
+    context.fillRect(36, 12, 440, 68);
+    context.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    context.lineWidth = 2;
+    context.strokeRect(36, 12, 440, 68);
+    context.fillStyle = colorHex;
+    context.beginPath();
+    context.arc(72, 46, 10, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = '#f5f7ff';
+    context.font = '700 28px monospace';
+    context.textBaseline = 'middle';
+    context.fillText(nextName.slice(0, 18), 98, 47);
+    texture.needsUpdate = true;
+  };
+  sprite.userData.updateDriver = update;
+  update(name, color);
+  return sprite;
+}
+
+function createRemoteCar(color: number, name: string) {
   const car = new THREE.Group();
   const bodyMaterial = new THREE.MeshStandardMaterial({ color, roughness: 0.32, metalness: 0.58 });
   const darkMaterial = new THREE.MeshStandardMaterial({ color: 0x07090d, roughness: 0.78, metalness: 0.12 });
@@ -98,10 +154,51 @@ function createRemoteCar(color: number) {
     tail.position.set(x, 0.55, -2.42);
     car.add(tail);
   });
-  return car;
+  const nameTag = createDriverNameTag(name, color);
+  car.add(nameTag);
+  return { group: car, paintMaterial: bodyMaterial, nameTag };
 }
 
 export default function World3D({ onBack }: World3DProps) {
+  const [draftName, setDraftName] = useState('');
+  const [playerName, setPlayerName] = useState('');
+
+  if (!playerName) {
+    return (
+      <div className="world-name-gate">
+        {onBack && <button type="button" onClick={onBack} className="world-name-exit">← Exit</button>}
+        <form
+          className="world-name-card"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const normalizedName = normalizeDriverName(draftName);
+            if (normalizedName.length >= 2) setPlayerName(normalizedName);
+          }}
+        >
+          <span className="world-name-kicker">Multiplayer grid</span>
+          <h1>Choose your driver name</h1>
+          <p>This appears above your car for every racer.</p>
+          <label htmlFor="world-driver-name">Driver name</label>
+          <input
+            id="world-driver-name"
+            value={draftName}
+            onChange={(event) => setDraftName(event.target.value)}
+            minLength={2}
+            maxLength={18}
+            autoComplete="nickname"
+            autoFocus
+            placeholder="Enter your name"
+          />
+          <button type="submit" disabled={normalizeDriverName(draftName).length < 2}>Enter circuit</button>
+        </form>
+      </div>
+    );
+  }
+
+  return <WorldGame onBack={onBack} playerName={playerName} />;
+}
+
+function WorldGame({ onBack, playerName }: WorldGameProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -109,6 +206,9 @@ export default function World3D({ onBack }: World3DProps) {
   const carRef = useRef<THREE.Group | null>(null);
   const remotePlayersRef = useRef<Map<string, RemotePlayerVisual>>(new Map());
   const multiplayerSocketRef = useRef<WebSocket | null>(null);
+  const clientIdRef = useRef('');
+  const localPaintMaterialRef = useRef<THREE.MeshStandardMaterial | null>(null);
+  const localNameTagRef = useRef<THREE.Sprite | null>(null);
   const carBodyRef = useRef<{
     velocity: THREE.Vector3;
     position: THREE.Vector3;
@@ -130,12 +230,14 @@ export default function World3D({ onBack }: World3DProps) {
   });
   const [multiplayerStatus, setMultiplayerStatus] = useState<'connecting' | 'online' | 'solo' | 'full'>('connecting');
   const [playerCount, setPlayerCount] = useState(1);
+  const [playerColor, setPlayerColor] = useState<number>(WORLD_PLAYER_COLORS[0]);
   const [nitro, setNitro] = useState(100);
   const [nearbyBuilding, setNearbyBuilding] = useState<BuildingData | null>(null);
   const [activeBuilding, setActiveBuilding] = useState<BuildingData | null>(null);
   const clockRef = useRef<THREE.Clock | null>(null);
   const buildingsRef = useRef<BuildingData[]>([]);
   const obstaclesRef = useRef<CircularObstacle[]>([]);
+  const guardRailCollidersRef = useRef<GuardRailCollider[]>([]);
   const animationFrameRef = useRef<number | null>(null);
   const nitroRef = useRef(nitro);
   nitroRef.current = nitro;
@@ -201,6 +303,9 @@ export default function World3D({ onBack }: World3DProps) {
     const curbWhite = new THREE.MeshStandardMaterial({ color: 0xf5efe5, roughness: 0.72 });
     const curbRed = new THREE.MeshStandardMaterial({ color: 0xe73545, roughness: 0.72 });
     const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xffd166 });
+    const guardRailMaterial = new THREE.MeshStandardMaterial({ color: 0xb7c0ca, roughness: 0.42, metalness: 0.78 });
+    const guardRailPostMaterial = new THREE.MeshStandardMaterial({ color: 0x68717d, roughness: 0.58, metalness: 0.62 });
+    guardRailCollidersRef.current = [];
 
     TRACK_POINTS.forEach(([ax, az], index) => {
       const [bx, bz] = TRACK_POINTS[(index + 1) % TRACK_POINTS.length];
@@ -242,6 +347,40 @@ export default function World3D({ onBack }: World3DProps) {
         marker.position.set(ax + dx * t, 0.135, az + dz * t);
         marker.rotation.y = angle;
         scene.add(marker);
+      }
+
+      if (GUARDED_TRACK_SEGMENTS.has(index)) {
+        const railStart = 0.04;
+        const railEnd = 0.96;
+        const railLength = length * (railEnd - railStart);
+        [-1, 1].forEach((side) => {
+          const offset = side * (TRACK_WIDTH / 2 + 0.8);
+          const railAx = ax + dx * railStart + normalX * offset;
+          const railAz = az + dz * railStart + normalZ * offset;
+          const railBx = ax + dx * railEnd + normalX * offset;
+          const railBz = az + dz * railEnd + normalZ * offset;
+          const rail = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.62, railLength), guardRailMaterial);
+          rail.position.set((railAx + railBx) / 2, 0.72, (railAz + railBz) / 2);
+          rail.rotation.y = angle;
+          rail.castShadow = true;
+          scene.add(rail);
+
+          for (let distance = 1; distance < railLength; distance += 5.5) {
+            const t = distance / railLength;
+            const post = new THREE.Mesh(new THREE.BoxGeometry(0.38, 1.25, 0.38), guardRailPostMaterial);
+            post.position.set(railAx + (railBx - railAx) * t, 0.62, railAz + (railBz - railAz) * t);
+            post.castShadow = true;
+            scene.add(post);
+          }
+          guardRailCollidersRef.current.push({
+            ax: railAx,
+            az: railAz,
+            bx: railBx,
+            bz: railBz,
+            inwardX: -normalX * side,
+            inwardZ: -normalZ * side,
+          });
+        });
       }
     });
 
@@ -369,13 +508,14 @@ export default function World3D({ onBack }: World3DProps) {
 
     const car = new THREE.Group();
 
-    const mainColor = 0xff5a36;
+    const mainColor = WORLD_PLAYER_COLORS[0];
     const darkColor = 0x080a0f;
     const glassColor = 0x14243a;
     const chromeColor = 0xe5e7eb;
     const redColor = 0xff2222;
 
     const bodyMat = new THREE.MeshStandardMaterial({ color: mainColor, roughness: 0.3, metalness: 0.62 });
+    localPaintMaterialRef.current = bodyMat;
     const darkMat = new THREE.MeshStandardMaterial({ color: darkColor, roughness: 0.72, metalness: 0.18 });
     const glassMat = new THREE.MeshStandardMaterial({ color: glassColor, emissive: 0x07101c, emissiveIntensity: 0.45, roughness: 0.12, metalness: 0.32 });
     const chromeMat = new THREE.MeshStandardMaterial({ color: chromeColor, roughness: 0.2, metalness: 0.95 });
@@ -543,6 +683,10 @@ export default function World3D({ onBack }: World3DProps) {
     carFill.position.set(0, 3.8, 0.3);
     car.add(carFill);
 
+    const localNameTag = createDriverNameTag(playerName, mainColor);
+    car.add(localNameTag);
+    localNameTagRef.current = localNameTag;
+
     car.position.set(TRACK_SPAWN.x, 0, TRACK_SPAWN.z);
     car.rotation.y = TRACK_SPAWN.rotation;
     scene.add(car);
@@ -556,7 +700,7 @@ export default function World3D({ onBack }: World3DProps) {
 
     clockRef.current = new THREE.Clock();
     setLoading(false);
-  }, []);
+  }, [playerName]);
 
   useEffect(() => {
     initScene();
@@ -715,7 +859,7 @@ export default function World3D({ onBack }: World3DProps) {
       let dx = body.position.x - x;
       let dz = body.position.z - z;
       let distance = Math.hypot(dx, dz);
-      if (distance >= minDistance) return;
+      if (distance >= minDistance) return null;
 
       if (distance < 0.001) {
         dx = -forward.x;
@@ -729,16 +873,17 @@ export default function World3D({ onBack }: World3DProps) {
 
       if (!movingVelocity) {
         resolveStaticImpact(normalX, normalZ);
-        return;
+        return null;
       }
 
       collisionNormal.set(normalX, 0, normalZ);
       collisionTangent.copy(body.velocity).sub(movingVelocity);
       const relativeNormalSpeed = collisionTangent.dot(collisionNormal);
-      if (relativeNormalSpeed >= 0) return;
-      body.velocity.addScaledVector(collisionNormal, -relativeNormalSpeed * 0.62);
-      body.velocity.multiplyScalar(0.86);
+      if (relativeNormalSpeed >= 0) return null;
+      body.velocity.addScaledVector(collisionNormal, -relativeNormalSpeed * 0.82);
+      body.velocity.multiplyScalar(0.94);
       body.steer *= 0.7;
+      return { normalX, normalZ, impactSpeed: -relativeNormalSpeed };
     };
 
     const animate = () => {
@@ -879,11 +1024,35 @@ export default function World3D({ onBack }: World3DProps) {
         resolveCircleImpact(obstacle.x, obstacle.z, obstacle.radius + 1.25);
       });
 
-      remotePlayersRef.current.forEach((remote) => {
+      guardRailCollidersRef.current.forEach((rail) => {
+        const dx = rail.bx - rail.ax;
+        const dz = rail.bz - rail.az;
+        const lengthSquared = dx * dx + dz * dz;
+        const t = THREE.MathUtils.clamp(((body.position.x - rail.ax) * dx + (body.position.z - rail.az) * dz) / lengthSquared, 0, 1);
+        const closestX = rail.ax + dx * t;
+        const closestZ = rail.az + dz * t;
+        if (Math.hypot(body.position.x - closestX, body.position.z - closestZ) < 1.55) {
+          body.position.x = closestX + rail.inwardX * 1.57;
+          body.position.z = closestZ + rail.inwardZ * 1.57;
+          resolveStaticImpact(rail.inwardX, rail.inwardZ);
+        }
+      });
+
+      remotePlayersRef.current.forEach((remote, id) => {
         obstacleVelocity
           .set(0, 0, remote.speed / 3.6)
           .applyAxisAngle(upAxis, remote.group.rotation.y);
-        resolveCircleImpact(remote.group.position.x, remote.group.position.z, 3.2, obstacleVelocity);
+        const impact = resolveCircleImpact(remote.group.position.x, remote.group.position.z, 3.2, obstacleVelocity);
+        const socket = multiplayerSocketRef.current;
+        if (impact && impact.impactSpeed > 1.2 && clientIdRef.current < id && socket?.readyState === WebSocket.OPEN) {
+          const transfer = Math.min(20, impact.impactSpeed * 0.58);
+          socket.send(JSON.stringify({
+            type: 'collision',
+            targetId: id,
+            impulseX: -impact.normalX * transfer,
+            impulseZ: -impact.normalZ * transfer,
+          }));
+        }
       });
 
       if (Math.abs(body.position.x) > 160) {
@@ -1002,15 +1171,26 @@ export default function World3D({ onBack }: World3DProps) {
     const storedId = window.sessionStorage.getItem('world-player-id');
     const clientId = storedId || window.crypto.randomUUID().replaceAll('-', '');
     window.sessionStorage.setItem('world-player-id', clientId);
-    const palette = [0xff5a36, 0x65e7ff, 0xd9ff48, 0xff4fa3, 0xffd166, 0x9d7dff];
-    const color = palette[clientId.charCodeAt(0) % palette.length];
-    const name = `Driver ${clientId.slice(0, 4).toUpperCase()}`;
+    clientIdRef.current = clientId;
+    const requestedColor = WORLD_PLAYER_COLORS[clientId.charCodeAt(0) % WORLD_PLAYER_COLORS.length];
+
+    const applyLocalColor = (color: number, name = playerName) => {
+      localPaintMaterialRef.current?.color.setHex(color);
+      const updateDriver = localNameTagRef.current?.userData.updateDriver as ((name: string, color: number) => void) | undefined;
+      updateDriver?.(name, color);
+      setPlayerColor(color);
+    };
 
     const removeRemote = (id: string) => {
       const remote = remotePlayersRef.current.get(id);
       if (!remote) return;
       scene.remove(remote.group);
       remote.group.traverse((child) => {
+        if (child instanceof THREE.Sprite) {
+          child.material.map?.dispose();
+          child.material.dispose();
+          return;
+        }
         if (!(child instanceof THREE.Mesh)) return;
         child.geometry.dispose();
         const materials = Array.isArray(child.material) ? child.material : [child.material];
@@ -1028,12 +1208,14 @@ export default function World3D({ onBack }: World3DProps) {
       if (player.id === clientId) return;
       let remote = remotePlayersRef.current.get(player.id);
       if (!remote) {
-        const group = createRemoteCar(player.color);
+        const { group, paintMaterial, nameTag } = createRemoteCar(player.color, player.name);
         group.position.set(player.x, 0, player.z);
         group.rotation.y = player.rotation;
         scene.add(group);
         remote = {
           group,
+          paintMaterial,
+          nameTag,
           targetPosition: new THREE.Vector3(player.x, 0, player.z),
           targetRotation: player.rotation,
           speed: player.speed,
@@ -1041,6 +1223,9 @@ export default function World3D({ onBack }: World3DProps) {
         };
         remotePlayersRef.current.set(player.id, remote);
       } else {
+        remote.paintMaterial.color.setHex(player.color);
+        const updateDriver = remote.nameTag.userData.updateDriver as ((name: string, color: number) => void) | undefined;
+        updateDriver?.(player.name, player.color);
         remote.targetPosition.set(player.x, 0, player.z);
         remote.targetRotation = player.rotation;
         remote.speed = player.speed;
@@ -1056,8 +1241,8 @@ export default function World3D({ onBack }: World3DProps) {
         type: 'join',
         player: {
           id: clientId,
-          name,
-          color,
+          name: playerName,
+          color: requestedColor,
           x: body.position.x,
           z: body.position.z,
           rotation: body.rotation,
@@ -1083,11 +1268,14 @@ export default function World3D({ onBack }: World3DProps) {
         try { event = JSON.parse(String(message.data)) as WorldServerEvent; } catch { return; }
         if (event.type === 'snapshot') {
           clearRemotes();
+          const localPlayer = event.players.find((player) => player.id === clientId);
+          if (localPlayer) applyLocalColor(localPlayer.color, localPlayer.name);
           event.players.forEach(upsertRemote);
           setPlayerCount(Math.max(1, Math.min(event.maxPlayers, event.players.length)));
           setMultiplayerStatus('online');
         } else if (event.type === 'player') {
-          upsertRemote(event.player);
+          if (event.player.id === clientId) applyLocalColor(event.player.color, event.player.name);
+          else upsertRemote(event.player);
         } else if (event.type === 'leave') {
           removeRemote(event.id);
           setPlayerCount(remotePlayersRef.current.size + 1);
@@ -1097,6 +1285,9 @@ export default function World3D({ onBack }: World3DProps) {
         } else if (event.type === 'unavailable') {
           reconnectAllowed = false;
           setMultiplayerStatus('solo');
+        } else if (event.type === 'impact' && event.targetId === clientId && carBodyRef.current) {
+          carBodyRef.current.velocity.x += event.impulseX;
+          carBodyRef.current.velocity.z += event.impulseZ;
         }
       });
       socket.addEventListener('close', () => {
@@ -1133,9 +1324,10 @@ export default function World3D({ onBack }: World3DProps) {
       if (reconnectTimer) clearTimeout(reconnectTimer);
       socket?.close();
       multiplayerSocketRef.current = null;
+      if (clientIdRef.current === clientId) clientIdRef.current = '';
       clearRemotes();
     };
-  }, []);
+  }, [playerName]);
 
   const resetCar = useCallback(() => {
     if (carBodyRef.current) {
@@ -1220,7 +1412,7 @@ export default function World3D({ onBack }: World3DProps) {
               <polyline className="world-map-track-road" points={`${TRACK_POINTS.map(([x, z]) => `${50 + (x / 320) * 100},${50 + (z / 320) * 100}`).join(' ')} 50,${50 + (TRACK_POINTS[0][1] / 320) * 100}`} />
               <polyline className="world-map-track-line" points={`${TRACK_POINTS.map(([x, z]) => `${50 + (x / 320) * 100},${50 + (z / 320) * 100}`).join(' ')} 50,${50 + (TRACK_POINTS[0][1] / 320) * 100}`} />
             </svg>
-            <div className="world-map-player" style={{ left: `${mapPosition.x}%`, top: `${mapPosition.y}%`, transform: `translate(-50%, -50%) rotate(${mapPosition.rotation}deg)` }} />
+            <div className="world-map-player" style={{ left: `${mapPosition.x}%`, top: `${mapPosition.y}%`, transform: `translate(-50%, -50%) rotate(${mapPosition.rotation}deg)`, backgroundColor: `#${playerColor.toString(16).padStart(6, '0')}` }} />
             {buildingsRef.current.map((b, i) => (
               <div key={i} className={`world-map-building${b.type ? ` world-map-building-${b.type}` : ''}`} style={{ left: `${50 + (b.x / 320) * 100}%`, top: `${50 + (b.z / 320) * 100}%` }} />
             ))}
@@ -1272,6 +1464,7 @@ export default function World3D({ onBack }: World3DProps) {
           <span className={`world-drive-mode is-${multiplayerStatus}`}>
             {multiplayerStatus === 'online' ? `${playerCount}/${WORLD_MAX_PLAYERS}` : multiplayerStatus === 'full' ? 'FULL' : multiplayerStatus === 'connecting' ? 'SYNC' : 'SOLO'}
           </span>
+          <span className="world-player-color"><i style={{ backgroundColor: `#${playerColor.toString(16).padStart(6, '0')}` }} />YOU</span>
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import { Redis } from '@upstash/redis';
 import type { WebSocket, RawData } from 'ws';
 import {
   WORLD_MAX_PLAYERS,
+  WORLD_PLAYER_COLORS,
   WORLD_STATE_INTERVAL_MS,
   type WorldClientEvent,
   type WorldPlayerState,
@@ -13,7 +14,7 @@ const PLAYERS_KEY = 'portfolio:world:players';
 const PRESENCE_KEY = 'portfolio:world:presence';
 const STALE_AFTER_MS = 12_000;
 
-type Session = { id: string | null; lastUpdate: number };
+type Session = { id: string | null; lastUpdate: number; lastImpact: number };
 
 const sockets = new Map<WebSocket, Session>();
 let publisher: Redis | null = null;
@@ -63,9 +64,10 @@ function validPlayer(player: Partial<WorldPlayerState>) {
 }
 
 function normalizePlayer(player: Omit<WorldPlayerState, 'updatedAt'>): WorldPlayerState {
+  const name = String(player.name || 'Driver').trim().replace(/[^\p{L}\p{N} _-]/gu, '').slice(0, 18) || 'Driver';
   return {
     id: player.id,
-    name: String(player.name || 'Driver').slice(0, 24),
+    name,
     color: Number.isInteger(player.color) ? Math.min(0xffffff, Math.max(0, player.color)) : 0xff5a36,
     x: player.x,
     z: player.z,
@@ -82,16 +84,40 @@ async function joinRoom(redis: Redis, player: WorldPlayerState) {
     for _, id in ipairs(stale) do redis.call('HDEL', KEYS[2], id) end
     if #stale > 0 then redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', ARGV[1]) end
     local exists = redis.call('ZSCORE', KEYS[1], ARGV[2])
-    if not exists and redis.call('ZCARD', KEYS[1]) >= tonumber(ARGV[5]) then return 0 end
+    if not exists and redis.call('ZCARD', KEYS[1]) >= tonumber(ARGV[5]) then return -1 end
+    local used = {}
+    local entries = redis.call('HGETALL', KEYS[2])
+    for i = 1, #entries, 2 do
+      if entries[i] ~= ARGV[2] then
+        local ok, activePlayer = pcall(cjson.decode, entries[i + 1])
+        if ok and activePlayer.color then used[tonumber(activePlayer.color)] = true end
+      end
+    end
+    local assigned = nil
+    local current = redis.call('HGET', KEYS[2], ARGV[2])
+    if current then
+      local ok, currentPlayer = pcall(cjson.decode, current)
+      if ok and currentPlayer.color and not used[tonumber(currentPlayer.color)] then assigned = tonumber(currentPlayer.color) end
+    end
+    if not assigned then
+      for i = 6, #ARGV do
+        local candidate = tonumber(ARGV[i])
+        if not used[candidate] then assigned = candidate break end
+      end
+    end
+    if not assigned then return -1 end
+    local decodedPlayer = cjson.decode(ARGV[4])
+    decodedPlayer.color = assigned
     redis.call('ZADD', KEYS[1], ARGV[3], ARGV[2])
-    redis.call('HSET', KEYS[2], ARGV[2], ARGV[4])
-    return 1
+    redis.call('HSET', KEYS[2], ARGV[2], cjson.encode(decodedPlayer))
+    return assigned
   `;
-  return Number(await redis.eval(
+  const assignedColor = Number(await redis.eval(
     script,
     [PRESENCE_KEY, PLAYERS_KEY],
-    [player.updatedAt - STALE_AFTER_MS, player.id, player.updatedAt, JSON.stringify(player), WORLD_MAX_PLAYERS],
-  )) === 1;
+    [player.updatedAt - STALE_AFTER_MS, player.id, player.updatedAt, JSON.stringify(player), WORLD_MAX_PLAYERS, ...WORLD_PLAYER_COLORS],
+  ));
+  return assignedColor >= 0 ? assignedColor : null;
 }
 
 async function publish(redis: Redis, event: WorldServerEvent) {
@@ -129,10 +155,12 @@ async function handleMessage(ws: WebSocket, data: RawData) {
   if (event.type === 'join') {
     if (!validPlayer(event.player)) return ws.close(4002, 'Invalid player');
     const player = normalizePlayer(event.player);
-    if (!(await joinRoom(redis, player))) {
+    const assignedColor = await joinRoom(redis, player);
+    if (assignedColor === null) {
       send(ws, { type: 'room_full', maxPlayers: WORLD_MAX_PLAYERS });
       return ws.close(4003, 'Room full');
     }
+    player.color = assignedColor;
     session.id = player.id;
     session.lastUpdate = player.updatedAt;
     const players = (await redis.hvals(PLAYERS_KEY) as unknown[]).flatMap((value) => {
@@ -140,6 +168,23 @@ async function handleMessage(ws: WebSocket, data: RawData) {
     });
     send(ws, { type: 'snapshot', players, maxPlayers: WORLD_MAX_PLAYERS });
     await publish(redis, { type: 'player', player });
+    return;
+  }
+
+  if (event.type === 'collision') {
+    const now = Date.now();
+    if (!session.id || now - session.lastImpact < 100
+      || !/^[a-zA-Z0-9_-]{8,64}$/.test(event.targetId)
+      || !isFiniteNumber(event.impulseX) || !isFiniteNumber(event.impulseZ)
+      || Math.hypot(event.impulseX, event.impulseZ) > 28) return;
+    session.lastImpact = now;
+    await publish(redis, {
+      type: 'impact',
+      targetId: event.targetId,
+      sourceId: session.id,
+      impulseX: event.impulseX,
+      impulseZ: event.impulseZ,
+    });
     return;
   }
 
@@ -160,7 +205,7 @@ async function handleMessage(ws: WebSocket, data: RawData) {
 
 export function registerWorldSocket(ws: WebSocket) {
   const redis = getPublisher();
-  sockets.set(ws, { id: null, lastUpdate: 0 });
+  sockets.set(ws, { id: null, lastUpdate: 0, lastImpact: 0 });
 
   if (!redis) {
     send(ws, { type: 'unavailable' });

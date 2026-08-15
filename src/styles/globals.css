@@ -586,6 +586,18 @@ button, a { -webkit-tap-highlight-color: transparent; }
 }
 
 /* 3D field interface */
+.world-name-gate { position: relative; display: grid; width: 100%; height: 100svh; place-items: center; overflow: hidden; padding: 1rem; color: #f4f6ff; background: radial-gradient(circle at 50% 35%, rgba(62,45,116,.72), transparent 38%), linear-gradient(145deg, #101426, #17102b 58%, #09151a); font-family: 'Courier New', Courier, monospace; }
+.world-name-gate::before { position: absolute; inset: 0; background-image: linear-gradient(rgba(101,231,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(101,231,255,.055) 1px, transparent 1px); background-size: 42px 42px; content: ''; mask-image: linear-gradient(to bottom, transparent, #000 25%, #000 75%, transparent); }
+.world-name-card { position: relative; z-index: 1; display: grid; width: min(30rem, 100%); padding: clamp(1.5rem, 4vw, 2.5rem); border: 1px solid rgba(101,231,255,.35); border-top: 3px solid #65e7ff; background: linear-gradient(145deg, rgba(14,18,37,.97), rgba(31,21,52,.95)); box-shadow: 0 2rem 6rem rgba(0,0,0,.55), inset 0 1px rgba(255,255,255,.07); clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px); }
+.world-name-kicker { color: #d9ff48; font-size: .58rem; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+.world-name-card h1 { margin: .55rem 0 .35rem; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.75rem, 5vw, 2.6rem); font-style: italic; font-weight: 400; }
+.world-name-card p { margin: 0 0 1.6rem; color: #aeb5cb; font-size: .7rem; line-height: 1.6; }
+.world-name-card label { margin-bottom: .45rem; color: #65e7ff; font-size: .56rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+.world-name-card input { min-height: 3.25rem; padding: 0 .9rem; border: 1px solid rgba(101,231,255,.35); outline: none; color: #fff; background: rgba(5,9,20,.68); font: inherit; font-size: 1rem; }
+.world-name-card input:focus { border-color: #65e7ff; box-shadow: 0 0 0 3px rgba(101,231,255,.1); }
+.world-name-card button { min-height: 3rem; margin-top: .8rem; border: 1px solid #d9ff48; color: #101426; background: #d9ff48; cursor: pointer; font: inherit; font-size: .66rem; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
+.world-name-card button:disabled { border-color: #4b5263; color: #858c9c; background: #252a38; cursor: not-allowed; }
+.world-name-exit { position: absolute; z-index: 2; top: 1rem; left: 1rem; padding: .7rem 1rem; border: 1px solid rgba(255,255,255,.2); color: #d8dce8; background: rgba(10,13,25,.76); cursor: pointer; font: inherit; font-size: .62rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .world-shell { position: relative; width: 100%; height: 100svh; overflow: hidden; color: #f4f6ff; background: #111322; font-family: 'Courier New', Courier, monospace; isolation: isolate; }
 .world-canvas { position: absolute; inset: 0; }
 .world-shell::before { position: absolute; z-index: 1; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 4px); content: ''; mix-blend-mode: overlay; }
@@ -638,6 +650,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .world-gear span { color: #65e7ff; font-size: .48rem; font-weight: 800; letter-spacing: .18em; }
 .world-gear strong { color: #fff; font-size: 1.7rem; font-style: italic; line-height: 1; }
 .world-hud-label { color: rgba(217, 255, 72, 0.8); font-size: 0.55rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 0.2rem; }
+.world-player-color { display: flex; align-items: center; gap: .3rem; margin-top: .25rem; color: #aeb5cb; font-size: .43rem; font-weight: 800; letter-spacing: .14em; }
+.world-player-color i { width: .48rem; height: .48rem; border: 1px solid rgba(255,255,255,.8); border-radius: 50%; box-shadow: 0 0 8px currentColor; }
 .world-speed-value { color: #f3f4e9; font-family: Georgia, 'Times New Roman', serif; font-size: 2rem; font-style: italic; font-weight: 400; line-height: 1; text-shadow: 0 0 16px rgba(101,231,255,.4); }
 .world-speed-unit { color: #9eafa0; font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 0.15rem; }
 .world-hud-divider { width: 1px; height: 2.5rem; background: linear-gradient(180deg, transparent, rgba(217, 255, 72, 0.3), transparent); }
