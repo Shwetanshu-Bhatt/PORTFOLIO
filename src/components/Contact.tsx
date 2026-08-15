@@ -1,4 +1,5 @@
 import { personal } from "@/data";
+import Link from "next/link";
 
 export default function Contact() {
   return (
@@ -11,6 +12,11 @@ export default function Contact() {
             <span className="contact-kicker">Have a real problem to solve?</span>
             <a className="contact-link" href={`mailto:${personal.email}`}>{personal.email}</a>
             <p className="contact-note">Tell me what is stuck, what is slow, or what needs to exist. I&apos;ll get back to you with a clear next step.</p>
+            <div className="local-service-links" aria-label="Development services in Dehradun">
+              <Link href="/freelance-developer-dehradun/">Freelance development</Link>
+              <Link href="/web-developer-dehradun/">Web development</Link>
+              <Link href="/backend-developer-dehradun/">Backend development</Link>
+            </div>
             <div className="social-row">
               <a href={personal.github} target="_blank" rel="noreferrer">GitHub ↗</a>
               <a href={personal.linkedin} target="_blank" rel="noreferrer">LinkedIn ↗</a>

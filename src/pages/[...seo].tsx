@@ -1,514 +1,149 @@
-import { GetStaticProps, GetStaticPaths } from 'next';
+import type { GetStaticPaths, GetStaticProps } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { personal, projects } from '@/data';
 
-// SEO page data - defines title, description, and content for each page
-const seoPagesData: Record<string, {
+const SITE_URL = 'https://shwetanshubhatt.sifakalabs.in';
+
+type ServicePage = {
   title: string;
   description: string;
-  keywords: string[];
   h1: string;
-  content: string;
-  cta: string;
-}> = {
-  // Location-based pages - Dehradun
-  'web-developer-dehradun': {
-    title: 'Web Developer in Dehradun | Best Web Development Services Uttarakhand | Shwetanshu Bhatt',
-    description: 'Looking for a professional web developer in Dehradun, Uttarakhand? Shwetanshu Bhatt offers expert web development services including Next.js, React, and full-stack development. Rank #1 developer in Dehradun.',
-    keywords: ['web developer dehradun', 'web developer uttarakhand', 'best web developer dehradun', 'website development dehradun', 'freelance web developer dehradun'],
-    h1: 'Professional Web Developer in Dehradun, Uttarakhand',
-    content: 'I am a professional web developer based in Dehradun, Uttarakhand, specializing in building modern, responsive websites and web applications. With expertise in Next.js, React, and full-stack development, I help businesses in Dehradun and across Uttarakhand establish their online presence.',
-    cta: 'Hire Web Developer in Dehradun'
+  intro: string;
+  serviceType: string;
+  keywords: string[];
+  services: { title: string; description: string }[];
+  idealFor: string[];
+};
+
+const servicePages: Record<string, ServicePage> = {
+  'freelance-developer-dehradun': {
+    title: 'Freelance Developer in Dehradun | Shwetanshu Bhatt',
+    description: 'Freelance software developer in Dehradun building websites, backend APIs, automation, and AI integrations for startups and local businesses.',
+    h1: 'Freelance developer in Dehradun for serious software projects.',
+    intro: 'I help businesses turn a clear problem into dependable software—from the first technical plan to deployment. Based in Dehradun, I work with clients across Uttarakhand and remotely throughout India.',
+    serviceType: 'Freelance software development',
+    keywords: ['freelance developer Dehradun', 'freelancer Dehradun', 'software developer Dehradun', 'freelance web developer Dehradun', 'developer for hire Uttarakhand'],
+    services: [
+      { title: 'Product development', description: 'Responsive web applications with practical user flows, secure APIs, and production deployment.' },
+      { title: 'Backend engineering', description: 'Python and Node.js APIs, PostgreSQL data models, authentication, queues, and resilient workers.' },
+      { title: 'AI and automation', description: 'Useful AI integrations with validation, retries, provider fallbacks, and human-review boundaries.' },
+    ],
+    idealFor: ['Startups needing an MVP or production feature', 'Local businesses replacing manual workflows', 'Teams needing focused backend or AI support'],
   },
-  'full-stack-developer-dehradun': {
-    title: 'Full Stack Developer Dehradun | Python, Next.js Expert | Shwetanshu Bhatt',
-    description: 'Hire the best full stack developer in Dehradun. Expert in Python, JavaScript, PostgreSQL, Next.js, and AI integration. Building production-scale applications for businesses in Uttarakhand.',
-    keywords: ['full stack developer dehradun', 'full stack developer uttarakhand', 'python developer dehradun', 'nextjs developer dehradun'],
-    h1: 'Expert Full Stack Developer in Dehradun, Uttarakhand',
-    content: 'As a full stack developer from Dehradun, I bring end-to-end development expertise. From backend systems using Python and PostgreSQL to beautiful frontends with Next.js, I deliver complete solutions for businesses in Uttarakhand and beyond.',
-    cta: 'Hire Full Stack Developer'
+  'web-developer-dehradun': {
+    title: 'Web Developer in Dehradun | Websites & Web Apps',
+    description: 'Web developer in Dehradun creating responsive, fast, SEO-ready websites and custom web applications with Next.js and React.',
+    h1: 'Web development in Dehradun, built around your business.',
+    intro: 'I design and build responsive websites and web applications that are easy to use, fast to load, and straightforward to maintain. Every build starts with the business outcome—not a generic template.',
+    serviceType: 'Web development',
+    keywords: ['web developer Dehradun', 'website developer Dehradun', 'website development Dehradun', 'freelance web developer Dehradun', 'web development Uttarakhand'],
+    services: [
+      { title: 'Business websites', description: 'Clear service pages, mobile-first layouts, contact journeys, analytics readiness, and technical SEO.' },
+      { title: 'Custom web applications', description: 'Dashboards, portals, booking flows, admin panels, and authenticated user experiences.' },
+      { title: 'Modernization', description: 'Performance, responsive design, accessibility, API wiring, and deployment improvements for existing sites.' },
+    ],
+    idealFor: ['Businesses establishing a credible online presence', 'Founders launching a web product', 'Teams modernizing an existing website'],
   },
   'backend-developer-dehradun': {
-    title: 'Backend Developer Dehradun | Python, PostgreSQL, API Expert | Shwetanshu Bhatt',
-    description: 'Expert backend developer in Dehradun specializing in Python, PostgreSQL, REST APIs, and fault-tolerant architectures. Building production-scale backend systems for businesses.',
-    keywords: ['backend developer dehradun', 'python developer dehradun', 'api developer dehradun', 'database developer dehradun'],
-    h1: 'Professional Backend Developer in Dehradun',
-    content: 'Specialized backend development services in Dehradun. I build robust, scalable backend systems using Python, PostgreSQL, and modern API architectures with a focus on resilience and clarity.',
-    cta: 'Hire Backend Developer'
+    title: 'Backend Developer in Dehradun | APIs & PostgreSQL',
+    description: 'Backend developer in Dehradun specializing in Python, Node.js, PostgreSQL, REST APIs, authentication, and reliable production systems.',
+    h1: 'Backend systems that stay reliable after launch.',
+    intro: 'I build backend software for products that need more than basic CRUD: reliable APIs, careful data models, background processing, integrations, recovery paths, and observable failure states.',
+    serviceType: 'Backend development',
+    keywords: ['backend developer Dehradun', 'Python developer Dehradun', 'API developer Dehradun', 'PostgreSQL developer Dehradun', 'backend development Uttarakhand'],
+    services: [
+      { title: 'API engineering', description: 'REST APIs with authentication, authorization, validation, documentation, and predictable errors.' },
+      { title: 'Database design', description: 'PostgreSQL schemas, migrations, query design, data integrity, and performance-focused access patterns.' },
+      { title: 'Reliable processing', description: 'Queues, scheduled jobs, retries, idempotent workflows, monitoring, and recovery from partial failures.' },
+    ],
+    idealFor: ['Products outgrowing a fragile backend', 'Teams integrating third-party services', 'Businesses automating data-heavy workflows'],
   },
-  'python-developer-dehradun': {
-    title: 'Python Developer Dehradun | AI, ML, Backend Expert | Shwetanshu Bhatt',
-    description: 'Top Python developer in Dehradun. Expert in AI integration, backend development, automation, and database systems. Building production-scale Python applications.',
-    keywords: ['python developer dehradun', 'python programmer dehradun', 'django developer dehradun'],
-    h1: 'Best Python Developer in Dehradun, Uttarakhand',
-    content: 'Expert Python developer offering services in AI integration, backend development, automation, and system design. Based in Dehradun, serving clients across Uttarakhand with production-grade Python solutions.',
-    cta: 'Hire Python Developer'
+  'full-stack-developer-dehradun': {
+    title: 'Full-Stack Developer in Dehradun | Next.js & Python',
+    description: 'Full-stack developer in Dehradun delivering complete web products with Next.js, React, Python, Node.js, and PostgreSQL.',
+    h1: 'One developer across product, frontend, backend, and deployment.',
+    intro: 'For focused products, a single technical owner can reduce handoffs and keep decisions coherent. I build complete web systems while keeping frontend experience, backend correctness, and deployment constraints aligned.',
+    serviceType: 'Full-stack development',
+    keywords: ['full stack developer Dehradun', 'Next.js developer Dehradun', 'React developer Dehradun', 'Python full stack developer Dehradun', 'software development Uttarakhand'],
+    services: [
+      { title: 'Frontend', description: 'Responsive React and Next.js interfaces with accessible components and real API states.' },
+      { title: 'Backend', description: 'Secure APIs, PostgreSQL persistence, uploads, integrations, jobs, and administrative workflows.' },
+      { title: 'Delivery', description: 'Environment configuration, cloud deployment, production checks, and maintainable handoff.' },
+    ],
+    idealFor: ['MVPs needing one accountable technical owner', 'Internal tools and business portals', 'Existing products needing end-to-end features'],
   },
   'ai-developer-dehradun': {
-    title: 'AI Developer Dehradun | AI Integration Expert | OpenAI, Gemini, Groq | Shwetanshu Bhatt',
-    description: 'AI developer in Dehradun specializing in OpenAI, Gemini, and Groq API integration. Building AI-powered applications and intelligent systems for businesses in Uttarakhand.',
-    keywords: ['ai developer dehradun', 'AI integration dehradun', 'openai developer dehradun', 'chatgpt integration dehradun'],
-    h1: 'AI Developer in Dehradun - AI Integration Expert',
-    content: 'Specialized AI development services in Dehradun. I integrate OpenAI, Gemini, Groq and other AI providers to build intelligent applications. Expertise in prompt engineering and AI validation layers.',
-    cta: 'Build AI Solution'
+    title: 'AI Developer in Dehradun | Practical AI Integration',
+    description: 'AI developer in Dehradun integrating OpenAI, Gemini, Groq, and retrieval workflows into reliable business software.',
+    h1: 'AI integration that behaves like production software.',
+    intro: 'I add AI capabilities where they create measurable value, then engineer the validation, fallbacks, review paths, and data boundaries required to operate them safely.',
+    serviceType: 'AI integration and automation',
+    keywords: ['AI developer Dehradun', 'AI integration Dehradun', 'OpenAI developer Dehradun', 'automation developer Dehradun', 'AI software developer Uttarakhand'],
+    services: [
+      { title: 'LLM integration', description: 'Structured model outputs, provider routing, validation, prompt versioning, and cost-aware execution.' },
+      { title: 'Knowledge workflows', description: 'Retrieval, document processing, classification, extraction, and human-reviewed recommendations.' },
+      { title: 'AI automation', description: 'Background pipelines with checkpoints, retries, monitoring, and explicit handling of uncertain results.' },
+    ],
+    idealFor: ['Teams adding AI to an existing product', 'Businesses processing repetitive knowledge work', 'Products requiring controlled multi-provider AI'],
   },
-  'freelance-developer-dehradun': {
-    title: 'Freelance Web Developer Dehradun | Hire Best Freelancer Uttarakhand | Shwetanshu Bhatt',
-    description: 'Hire a freelance web developer in Dehradun. Professional freelance developer offering web development, backend development, and AI integration services in Uttarakhand.',
-    keywords: ['freelance developer dehradun', 'freelance web developer dehradun', 'freelancer dehradun', 'hire developer dehradun'],
-    h1: 'Freelance Developer in Dehradun - Available for Hire',
-    content: 'Professional freelance developer based in Dehradun, Uttarakhand. Offering flexible engagement models for web development, backend systems, and AI integration projects.',
-    cta: 'Hire Freelance Developer'
-  },
-  
-  // Location-based pages - Uttarakhand
-  'web-developer-uttarakhand': {
-    title: 'Web Developer Uttarakhand | Best Website Development Services | Shwetanshu Bhatt',
-    description: 'Professional web developer serving all of Uttarakhand. Expert in Next.js, React, full-stack development. Building websites and web applications for businesses across the state.',
-    keywords: ['web developer uttarakhand', 'website development uttarakhand', 'best developer uttarakhand'],
-    h1: 'Top Web Developer Serving Uttarakhand',
-    content: 'I provide professional web development services to businesses throughout Uttarakhand. From Dehradun to Haridwar, Rishikesh to Haldwani, I help businesses establish their online presence with modern, responsive websites.',
-    cta: 'Get Web Development Services'
-  },
-  'full-stack-developer-uttarakhand': {
-    title: 'Full Stack Developer Uttarakhand | Python & JavaScript Expert | Shwetanshu Bhatt',
-    description: 'Full stack developer serving Uttarakhand. Expert in Python, JavaScript, Next.js, PostgreSQL, and AI integration. Building complete web solutions for businesses across the state.',
-    keywords: ['full stack developer uttarakhand', 'full stack programmer uttarakhand'],
-    h1: 'Full Stack Developer Serving Uttarakhand',
-    content: 'End-to-end full stack development services for businesses across Uttarakhand. I build complete web applications from database design to frontend implementation.',
-    cta: 'Hire Full Stack Developer'
-  },
-  'python-developer-uttarakhand': {
-    title: 'Python Developer Uttarakhand | AI & Backend Expert | Shwetanshu Bhatt',
-    description: 'Expert Python developer serving Uttarakhand. Specializing in AI integration, backend development, and automation solutions for businesses across the state.',
-    keywords: ['python developer uttarakhand', 'python programmer uttarakhand'],
-    h1: 'Python Developer Serving Uttarakhand',
-    content: 'Professional Python development services for Uttarakhand businesses. Specializing in AI integration, backend systems, and automation solutions.',
-    cta: 'Hire Python Developer'
-  },
-  
-  // Personal Brand Pages
-  'shwetanshu-bhatt': {
-    title: 'Shwetanshu Bhatt | Backend Developer & AI Systems Expert | Dehradun, Uttarakhand',
-    description: 'Shwetanshu Bhatt - Professional backend developer and AI systems expert based in Dehradun, Uttarakhand. Building production-scale AI-integrated backend systems with fault-tolerant architectures.',
-    keywords: ['shwetanshu bhatt', 'shwetanshu bhatt developer', 'shwetanshu bhatt dehradun', 'shwetanshu bhatt uttarakhand'],
-    h1: 'Shwetanshu Bhatt - Backend Developer & AI Systems Expert',
-    content: 'Hi, I am Shwetanshu Bhatt, a backend developer and AI systems expert based in Dehradun, Uttarakhand. I specialize in building production-scale AI-integrated backend systems that have reduced generation time by 90%.',
-    cta: 'View My Work'
-  },
-  'shwetanshu-bhatt-developer': {
-    title: 'Shwetanshu Bhatt Developer | Python, Next.js, AI Integration Expert',
-    description: 'Shwetanshu Bhatt - Full stack developer specializing in Python, Next.js, PostgreSQL, and AI integration. Building production-scale applications.',
-    keywords: ['shwetanshu bhatt developer', 'shwetanshu programmer', 'shwetanshu software engineer'],
-    h1: 'Shwetanshu Bhatt - Software Developer',
-    content: 'I am Shwetanshu Bhatt, a software developer specializing in Python, JavaScript, PostgreSQL, and AI integration. I build production-scale applications with fault-tolerant architectures.',
-    cta: 'View My Projects'
-  },
-  'shwetanshu-bhatt-dehradun': {
-    title: 'Shwetanshu Bhatt Dehradun | Web Developer Uttarakhand | Shwetanshu Bhatt',
-    description: 'Shwetanshu Bhatt - Professional web and backend developer based in Dehradun, Uttarakhand. Expert in Python, Next.js, AI systems development.',
-    keywords: ['shwetanshu bhatt dehradun', 'developer dehradun', 'shwetanshu bhatt uttarakhand developer'],
-    h1: 'Shwetanshu Bhatt - Developer in Dehradun, Uttarakhand',
-    content: 'I am Shwetanshu Bhatt, a professional developer based in Dehradun, Uttarakhand. I offer web development, backend development, and AI integration services to businesses in Dehradun and across Uttarakhand.',
-    cta: 'Contact Shwetanshu'
-  },
-  
-  // Service Pages
-  'website-development': {
-    title: 'Website Development Services | Professional Web Developer | Shwetanshu Bhatt',
-    description: 'Professional website development services. Modern, responsive websites built with Next.js, React, and modern technologies. SEO-friendly and performance-optimized.',
-    keywords: ['website development', 'web development services', 'professional website developer'],
-    h1: 'Professional Website Development Services',
-    content: 'I offer comprehensive website development services including responsive website design, e-commerce solutions, and custom web applications. Every website is built with modern technologies for optimal performance.',
-    cta: 'Get a Quote'
-  },
-  'backend-development': {
-    title: 'Backend Development Services | Python, PostgreSQL Expert | Shwetanshu Bhatt',
-    description: 'Expert backend development services. Scalable APIs, database design, and server-side applications using Python, PostgreSQL, and modern architectures.',
-    keywords: ['backend development', 'backend developer', 'api development', 'server side development'],
-    h1: 'Professional Backend Development Services',
-    content: 'Specialized backend development services including REST API development, database design, authentication systems, and scalable server architectures. Built with Python, PostgreSQL, and best practices.',
-    cta: 'Discuss Your Project'
-  },
-  'python-development': {
-    title: 'Python Development Services | AI, Backend, Automation | Shwetanshu Bhatt',
-    description: 'Expert Python development services. AI integration, backend systems, automation scripts, and data processing solutions.',
-    keywords: ['python development', 'python programmer', 'python services'],
-    h1: 'Professional Python Development Services',
-    content: 'Comprehensive Python development services including AI integration, backend development, automation, and custom Python applications. Expertise in OpenAI, Gemini, Groq APIs.',
-    cta: 'Hire Python Developer'
-  },
-  'ai-integration': {
-    title: 'AI Integration Services | ChatGPT, GPT-4, Gemini Integration | Shwetanshu Bhatt',
-    description: 'Professional AI integration services. Integrate OpenAI, GPT-4, Gemini, and other AI APIs into your applications. Build intelligent, AI-powered solutions.',
-    keywords: ['AI integration', 'chatgpt integration', 'openai integration', 'AI API integration'],
-    h1: 'Expert AI Integration Services',
-    content: 'I specialize in integrating AI capabilities into existing systems. From OpenAI and GPT-4 to Gemini and Groq, I help businesses leverage the power of artificial intelligence.',
-    cta: 'Integrate AI Now'
-  },
-  'api-development': {
-    title: 'API Development Services | REST API Expert | Shwetanshu Bhatt',
-    description: 'Professional API development services. Design and build scalable REST APIs with proper documentation, authentication, and error handling.',
-    keywords: ['API development', 'REST API', 'api developer', 'web API'],
-    h1: 'Professional API Development Services',
-    content: 'Expert API development services including REST API design, GraphQL APIs, authentication systems, API documentation, and comprehensive testing.',
-    cta: 'Develop Your API'
-  },
-  'database-design': {
-    title: 'Database Design Services | PostgreSQL Expert | Shwetanshu Bhatt',
-    description: 'Professional database design and optimization services. PostgreSQL, MySQL, database architecture, and performance tuning.',
-    keywords: ['database design', 'postgresql developer', 'database optimization'],
-    h1: 'Professional Database Design Services',
-    content: 'Expert database design services including schema architecture, PostgreSQL development, query optimization, and database performance tuning.',
-    cta: 'Design Your Database'
-  },
-  'freelance-web-developer': {
-    title: 'Freelance Web Developer | Hire Expert Freelancer | Shwetanshu Bhatt',
-    description: 'Hire a freelance web developer. Professional freelance services for website development, backend systems, and AI integration.',
-    keywords: ['freelance web developer', 'hire freelance developer', 'freelance programmer'],
-    h1: 'Freelance Web Developer Services',
-    content: 'Professional freelance web development services. Flexible engagement models for businesses of all sizes. From small websites to complex web applications.',
-    cta: 'Hire Freelance Developer'
-  },
-  
-  // Skill Pages
-  'nextjs-developer': {
-    title: 'Next.js Developer | React & Next.js Expert | Shwetanshu Bhatt',
-    description: 'Expert Next.js developer. Building modern React applications with Next.js, server-side rendering, and optimal performance.',
-    keywords: ['nextjs developer', 'next.js developer', 'react developer', 'nextjs expert'],
-    h1: 'Professional Next.js Developer',
-    content: 'Specialized Next.js development services. Building modern, fast, SEO-friendly web applications with React and Next.js framework.',
-    cta: 'Build with Next.js'
-  },
-  'postgresql-developer': {
-    title: 'PostgreSQL Developer | Database Expert | Shwetanshu Bhatt',
-    description: 'Expert PostgreSQL developer. Database design, query optimization, and PostgreSQL-based solutions.',
-    keywords: ['postgresql developer', 'postgresql expert', 'postgres developer'],
-    h1: 'Professional PostgreSQL Developer',
-    content: 'Expert PostgreSQL development services including database design, query optimization, stored procedures, and performance tuning.',
-    cta: 'Get PostgreSQL Help'
-  },
-  'docker-developer': {
-    title: 'Docker Developer | Containerization Expert | Shwetanshu Bhatt',
-    description: 'Docker and containerization services. Dockerize your applications for easy deployment and scaling.',
-    keywords: ['docker developer', 'containerization', 'docker expert'],
-    h1: 'Docker & Containerization Services',
-    content: 'Professional Docker services including containerization, Docker Compose, deployment automation, and infrastructure setup.',
-    cta: 'Containerize Your App'
-  },
-  
-  // Contact & Hire Pages
-  'hire-me': {
-    title: 'Hire Me | Web Developer & AI Expert Available for Work | Shwetanshu Bhatt',
-    description: 'Hire Shwetanshu Bhatt for your web development and AI integration projects. Available for freelance work and full-time opportunities.',
-    keywords: ['hire me', 'hire developer', 'available for work', 'freelance hire'],
-    h1: 'Hire Shwetanshu Bhatt - Available for Projects',
-    content: 'I am available for web development, backend development, and AI integration projects. Whether you need a freelance developer for a specific project or ongoing partnership, let us discuss how I can help.',
-    cta: 'Get in Touch'
-  },
-  'contact': {
-    title: 'Contact | Get in Touch | Shwetanshu Bhatt',
-    description: 'Contact Shwetanshu Bhatt for web development, backend development, and AI integration services in Dehradun and Uttarakhand.',
-    keywords: ['contact', 'contact developer', 'get in touch'],
-    h1: 'Get in Touch',
-    content: 'Feel free to contact me for any web development, backend development, or AI integration projects. I am based in Dehradun, Uttarakhand, and work with clients globally.',
-    cta: 'Send a Message'
-  },
-  'blog': {
-    title: 'Blog | Technical Articles & Insights | Shwetanshu Bhatt',
-    description: 'Technical blog featuring articles on web development, Python, AI integration, and software engineering.',
-    keywords: ['blog', 'technical blog', 'articles', 'tutorials'],
-    h1: 'Technical Blog & Articles',
-    content: 'Read my technical articles on web development, Python programming, AI integration, and software engineering best practices.',
-    cta: 'Read Articles'
-  }
 };
 
-// Default SEO data for unknown pages
-const defaultSEO = {
-  title: 'Shwetanshu Bhatt | Backend Developer & AI Systems Expert | Dehradun, Uttarakhand',
-  description: 'Professional backend developer and AI systems expert in Dehradun, Uttarakhand. Building production-scale AI-integrated backend systems with Python, PostgreSQL, and Next.js.',
-  keywords: ['backend developer', 'AI developer', 'python developer', 'web developer dehradun', 'uttarakhand'],
-  h1: 'Shwetanshu Bhatt - Backend Developer & AI Systems Expert',
-  content: 'I am Shwetanshu Bhatt, a backend developer and AI systems expert based in Dehradun, Uttarakhand. I specialize in building production-scale AI-integrated backend systems using Python, PostgreSQL, and modern technologies.',
-  cta: 'Get in Touch'
-};
+export default function ServicePage({ slug }: { slug: string }) {
+  const page = servicePages[slug];
+  const canonical = `${SITE_URL}/${slug}/`;
+  const relatedPages = Object.entries(servicePages).filter(([key]) => key !== slug).slice(0, 3);
+  const schema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      { '@type': 'WebPage', '@id': `${canonical}#webpage`, url: canonical, name: page.title, description: page.description, inLanguage: 'en-IN', isPartOf: { '@id': `${SITE_URL}/#website` }, about: { '@id': `${SITE_URL}/#person` } },
+      { '@type': 'Person', '@id': `${SITE_URL}/#person`, name: personal.name, jobTitle: 'Freelance Software Developer', url: SITE_URL, image: `${SITE_URL}/images/profile.png`, email: personal.email, knowsAbout: ['Backend development', 'Web development', 'Python', 'PostgreSQL', 'Next.js', 'AI integration'], address: { '@type': 'PostalAddress', addressLocality: 'Dehradun', addressRegion: 'Uttarakhand', addressCountry: 'IN' }, sameAs: [personal.github, personal.linkedin] },
+      { '@type': 'ProfessionalService', '@id': `${SITE_URL}/#business`, name: `${personal.name} — Freelance Software Development`, url: SITE_URL, email: personal.email, image: `${SITE_URL}/images/profile.png`, founder: { '@id': `${SITE_URL}/#person` }, address: { '@type': 'PostalAddress', addressLocality: 'Dehradun', addressRegion: 'Uttarakhand', addressCountry: 'IN' }, areaServed: [{ '@type': 'City', name: 'Dehradun' }, { '@type': 'State', name: 'Uttarakhand' }, { '@type': 'Country', name: 'India' }] },
+      { '@type': 'Service', name: page.serviceType, description: page.description, provider: { '@id': `${SITE_URL}/#business` }, areaServed: [{ '@type': 'City', name: 'Dehradun' }, { '@type': 'State', name: 'Uttarakhand' }], url: canonical },
+      { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL }, { '@type': 'ListItem', position: 2, name: page.serviceType, item: canonical }] },
+    ],
+  };
 
-export default function SEOPage() {
-  const router = useRouter();
-  const { seo } = router.query;
-  
-  // Get the page key from the URL path
-  const pageKey: string = Array.isArray(seo) ? seo.join('/') : (seo || '');
-  const pageData = seoPagesData[pageKey] || defaultSEO;
-  
-  return (
-    <>
-      <Head>
-        <title>{pageData.title}</title>
-        <meta name="description" content={pageData.description} />
-        <meta name="keywords" content={pageData.keywords.join(', ')} />
-        
-        {/* Open Graph / Facebook */}
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content={pageData.title} />
-        <meta property="og:description" content={pageData.description} />
-        
-        {/* Twitter */}
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:title" content={pageData.title} />
-        <meta property="twitter:description" content={pageData.description} />
-        
-        {/* Canonical URL */}
-        <link rel="canonical" href={`https://shwetanshubhatt.apsgroupco.com/${pageKey}/`} />
-        
-        {/* Additional SEO */}
-        <meta name="author" content="Shwetanshu Bhatt" />
-        <meta name="robots" content="index, follow" />
-        <meta name="geo.region" content="IN-UT" />
-        <meta name="geo.placename" content="Dehradun" />
-        
-        {/* Structured Data - Person */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Person",
-              "name": "Shwetanshu Bhatt",
-              "jobTitle": "Backend Developer",
-              "url": "https://shwetanshubhatt.apsgroupco.com",
-              "address": {
-                "@type": "PostalAddress",
-                "addressLocality": "Dehradun",
-                "addressRegion": "Uttarakhand",
-                "addressCountry": "IN"
-              },
-              "email": "shwetanshubhatt@gmail.com",
-              "sameAs": [
-                "https://github.com/Shwetanshu-Bhatt",
-                "https://www.linkedin.com/in/shwetanshu-bhatt-082167257/"
-              ]
-            })
-          }}
-        />
-        
-        {/* Structured Data - LocalBusiness */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "LocalBusiness",
-              "name": "Shwetanshu Bhatt - Web Developer Dehradun",
-              "description": pageData.description,
-              "url": `https://shwetanshubhatt.apsgroupco.com/${pageKey}/`,
-              "telephone": "+91-9456XXXXXX",
-              "email": "shwetanshubhatt@gmail.com",
-              "address": {
-                "@type": "PostalAddress",
-                "addressLocality": "Dehradun",
-                "addressRegion": "Uttarakhand",
-                "addressCountry": "IN"
-              },
-              "geo": {
-                "@type": "GeoCoordinates",
-                "latitude": "30.3165",
-                "longitude": "78.0322"
-              },
-              "openingHours": "Mo-Fr 09:00-18:00",
-              "priceRange": "$$"
-            })
-          }}
-        />
-        
-        {/* Structured Data - Service */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Service",
-              "name": pageData.h1,
-              "description": pageData.description,
-              "provider": {
-                "@type": "Person",
-                "name": "Shwetanshu Bhatt",
-                "url": "https://shwetanshubhatt.apsgroupco.com"
-              },
-              "areaServed": {
-                "@type": "State",
-                "name": "Uttarakhand"
-              },
-              "serviceType": "Web Development"
-            })
-          }}
-        />
-      </Head>
-      
-      <div style={{
-        minHeight: '100vh',
-        padding: '2rem',
-        fontFamily: 'system-ui, sans-serif',
-        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-        color: '#ffffff'
-      }}>
-        <div style={{
-          maxWidth: '800px',
-          margin: '0 auto',
-          padding: '3rem 2rem'
-        }}>
-          {/* Navigation */}
-          <nav style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '3rem',
-            paddingBottom: '1rem',
-            borderBottom: '1px solid rgba(255,255,255,0.1)'
-          }}>
-            <Link href="/" style={{ 
-              color: '#fff', 
-              textDecoration: 'none',
-              fontSize: '1.25rem',
-              fontWeight: 'bold'
-            }}>
-              Shwetanshu Bhatt
-            </Link>
-            <div style={{ display: 'flex', gap: '1.5rem' }}>
-              <Link href="/#about" style={{ color: '#aaa', textDecoration: 'none' }}>About</Link>
-              <Link href="/#skills" style={{ color: '#aaa', textDecoration: 'none' }}>Skills</Link>
-              <Link href="/#experience" style={{ color: '#aaa', textDecoration: 'none' }}>Experience</Link>
-              <Link href="/#contact" style={{ color: '#aaa', textDecoration: 'none' }}>Contact</Link>
-            </div>
-          </nav>
-          
-          {/* Main Content */}
-          <header style={{ marginBottom: '2rem' }}>
-            <h1 style={{
-              fontSize: '2.5rem',
-              fontWeight: 'bold',
-              marginBottom: '1rem',
-              background: 'linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}>
-              {pageData.h1}
-            </h1>
-            <p style={{
-              fontSize: '1.25rem',
-              color: '#aaa',
-              lineHeight: '1.8'
-            }}>
-              {pageData.content}
-            </p>
-          </header>
-          
-          {/* Keywords Section */}
-          <section style={{
-            background: 'rgba(255,255,255,0.05)',
-            borderRadius: '1rem',
-            padding: '2rem',
-            marginBottom: '2rem'
-          }}>
-            <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: '#00d4ff' }}>
-              Services Offered:
-            </h2>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-              {pageData.keywords.slice(0, 8).map((keyword: string, index: number) => (
-                <span key={index} style={{
-                  background: 'rgba(124, 58, 237, 0.3)',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '2rem',
-                  fontSize: '0.875rem'
-                }}>
-                  {keyword}
-                </span>
-              ))}
-            </div>
-          </section>
-          
-          {/* CTA Section */}
-          <div style={{
-            display: 'flex',
-            gap: '1rem',
-            flexWrap: 'wrap'
-          }}>
-            <Link 
-              href="/#contact"
-              style={{
-                background: 'linear-gradient(135deg, #00d4ff 0%, #7c3aed 100%)',
-                color: '#fff',
-                padding: '1rem 2rem',
-                borderRadius: '0.5rem',
-                textDecoration: 'none',
-                fontWeight: 'bold',
-                display: 'inline-block'
-              }}
-            >
-              {pageData.cta}
-            </Link>
-            <Link 
-              href="/#projects"
-              style={{
-                background: 'transparent',
-                border: '2px solid rgba(255,255,255,0.3)',
-                color: '#fff',
-                padding: '1rem 2rem',
-                borderRadius: '0.5rem',
-                textDecoration: 'none',
-                fontWeight: 'bold',
-                display: 'inline-block'
-              }}
-            >
-              View My Work
-            </Link>
-          </div>
-          
-          {/* Contact Info */}
-          <section style={{
-            marginTop: '3rem',
-            paddingTop: '2rem',
-            borderTop: '1px solid rgba(255,255,255,0.1)'
-          }}>
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Contact Information:</h3>
-            <p style={{ color: '#aaa', marginBottom: '0.5rem' }}>📧 shwetanshubhatt@gmail.com</p>
-            <p style={{ color: '#aaa', marginBottom: '0.5rem' }}>📍 Dehradun, Uttarakhand, India</p>
-            <p style={{ color: '#aaa' }}>🔗 <a href="https://github.com/Shwetanshu-Bhatt" style={{ color: '#00d4ff' }}>GitHub</a> | <a href="https://www.linkedin.com/in/shwetanshu-bhatt-082167257/" style={{ color: '#00d4ff' }}>LinkedIn</a></p>
-          </section>
-          
-          {/* Footer */}
-          <footer style={{
-            marginTop: '4rem',
-            textAlign: 'center',
-            color: '#666',
-            paddingTop: '2rem'
-          }}>
-            <p>© {new Date().getFullYear()} Shwetanshu Bhatt. All rights reserved.</p>
-            <p>Backend Developer | AI Systems | Python | Dehradun, Uttarakhand</p>
-          </footer>
-        </div>
-      </div>
-    </>
-  );
+  return <>
+    <Head>
+      <title>{page.title}</title>
+      <meta name="description" content={page.description} />
+      <meta name="keywords" content={page.keywords.join(', ')} />
+      <meta name="author" content={personal.name} />
+      <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+      <meta name="geo.region" content="IN-UK" />
+      <meta name="geo.placename" content="Dehradun" />
+      <link rel="canonical" href={canonical} />
+      <link rel="alternate" hrefLang="en-IN" href={canonical} />
+      <meta property="og:type" content="website" />
+      <meta property="og:locale" content="en_IN" />
+      <meta property="og:site_name" content={`${personal.name} — Software Developer`} />
+      <meta property="og:title" content={page.title} />
+      <meta property="og:description" content={page.description} />
+      <meta property="og:url" content={canonical} />
+      <meta property="og:image" content={`${SITE_URL}/images/profile.png`} />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={page.title} />
+      <meta name="twitter:description" content={page.description} />
+      <meta name="twitter:image" content={`${SITE_URL}/images/profile.png`} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
+    </Head>
+
+    <main className="seo-page">
+      <nav className="seo-nav"><Link href="/">SB / Portfolio</Link><Link href="/#contact">Discuss a project →</Link></nav>
+      <header className="seo-hero"><span>Based in Dehradun · Working across India</span><h1>{page.h1}</h1><p>{page.intro}</p><div className="seo-actions"><a href={`mailto:${personal.email}?subject=${encodeURIComponent(page.serviceType)}`}>Start a conversation</a><Link href="/#projects">See selected work</Link></div></header>
+      <section className="seo-services"><div className="seo-section-title"><span>What I deliver</span><h2>Focused engineering, end to end.</h2></div><div className="seo-service-grid">{page.services.map((service, index) => <article key={service.title}><span>0{index + 1}</span><h3>{service.title}</h3><p>{service.description}</p></article>)}</div></section>
+      <section className="seo-fit"><div><span>Good fit for</span><h2>Projects where reliability matters.</h2></div><ul>{page.idealFor.map(item => <li key={item}>{item}</li>)}</ul></section>
+      <section className="seo-proof"><span>Selected proof</span><div>{projects.projects.slice(0, 3).map(project => <article key={project.id}><h3>{project.title}</h3><p>{project.description}</p>{project.link !== '#' && <a href={project.link} target="_blank" rel="noreferrer">View project ↗</a>}</article>)}</div></section>
+      <section className="seo-related"><span>Related services in Dehradun</span><div>{relatedPages.map(([key, related]) => <Link key={key} href={`/${key}/`}>{related.serviceType}<span>→</span></Link>)}</div></section>
+      <footer className="seo-footer"><div><strong>{personal.name}</strong><span>Freelance software developer · Dehradun, Uttarakhand</span></div><a href={`mailto:${personal.email}`}>{personal.email}</a></footer>
+    </main>
+  </>;
 }
 
-export const getStaticPaths: GetStaticPaths = async () => {
-  const paths = Object.keys(seoPagesData).map((key) => ({
-    params: { seo: key.split('/') }
-  }));
-  
-  return {
-    paths,
-    fallback: false // Changed from 'blocking' to false - all pages must be pre-rendered
-  };
-};
-
-export const getStaticProps: GetStaticProps = async () => {
-  return {
-    props: {},
-    revalidate: 60 // ISR: regenerate page every 60 seconds
-  };
+export const getStaticPaths: GetStaticPaths = async () => ({ paths: Object.keys(servicePages).map(slug => ({ params: { seo: [slug] } })), fallback: false });
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const seo = params?.seo;
+  const slug = Array.isArray(seo) ? seo.join('/') : String(seo || '');
+  return servicePages[slug] ? { props: { slug } } : { notFound: true };
 };

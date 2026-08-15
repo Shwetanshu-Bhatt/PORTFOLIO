@@ -7,6 +7,17 @@ const nextConfig = {
   
   // Ensure proper React hydration
   reactStrictMode: true,
+
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'shwetanshubhatt.apsgroupco.com' }],
+        destination: 'https://shwetanshubhatt.sifakalabs.in/:path*',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -1,34 +1,6 @@
-# Robots.txt for shwetanshubhatt.apsgroupco.com
-# Optimized for SEO and Google Search Console
-
-# Allow all search engine crawlers
 User-agent: *
 Allow: /
-
-# Sitemap location
-Sitemap: https://shwetanshubhatt.apsgroupco.com/sitemap.xml
-
-# Crawl-delay (optional, for politeness)
-Crawl-delay: 1
-
-# Disallow admin and API pages
 Disallow: /admin/
 Disallow: /api/
 
-# Googlebot specific rules
-User-agent: Googlebot
-Allow: /
-Crawl-delay: 0.5
-
-# Bingbot specific rules
-User-agent: Bingbot
-Allow: /
-Crawl-delay: 0.5
-
-# DuckDuckBot
-User-agent: DuckDuckBot
-Allow: /
-
-# Yahoo! Slurp
-User-agent: Slurp
-Allow: /
+Sitemap: https://shwetanshubhatt.sifakalabs.in/sitemap.xml
