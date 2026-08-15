@@ -957,7 +957,7 @@ export default function World3D({ onBack }: World3DProps) {
       if (cancelled || !reconnectAllowed) return;
       setMultiplayerStatus('connecting');
       const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      socket = new WebSocket(`${protocol}://${window.location.host}/api/world/ws`);
+      socket = new WebSocket(`${protocol}://${window.location.host}/api/world/ws/`);
       multiplayerSocketRef.current = socket;
 
       socket.addEventListener('open', () => {
