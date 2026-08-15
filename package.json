@@ -2,6 +2,9 @@
   "name": "my-portfolio",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,20 +12,28 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.20.0",
     "@heroicons/react": "^2.2.0",
     "@neondatabase/serverless": "^1.1.0",
-    "next": "15.5.12",
+    "@upstash/redis": "^1.38.2",
+    "@vercel/functions": "^3.9.3",
+    "howler": "^2.2.4",
+    "next": "^15.5.16",
     "next-themes": "^0.4.6",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "three": "^0.185.1",
+    "ws": "^8.21.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.12",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.185.4",
+    "@types/ws": "^8.18.1",
     "eslint": "^9.35.0",
-    "eslint-config-next": "15.5.12",
+    "eslint-config-next": "^15.5.16",
     "tailwindcss": "^4.1.12",
     "typescript": "^5.9.2"
   }

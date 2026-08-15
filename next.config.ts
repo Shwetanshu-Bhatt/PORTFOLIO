@@ -7,6 +7,7 @@ const nextConfig = {
   
   // Ensure proper React hydration
   reactStrictMode: true,
+  serverExternalPackages: ['ws'],
 
   async redirects() {
     return [
