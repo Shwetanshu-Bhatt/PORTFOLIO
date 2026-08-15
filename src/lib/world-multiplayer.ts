@@ -4,14 +4,17 @@ import {
   WORLD_MAX_PLAYERS,
   WORLD_PLAYER_COLORS,
   WORLD_STATE_INTERVAL_MS,
+  WORLD_TOTAL_LAPS,
   type WorldClientEvent,
   type WorldPlayerState,
+  type WorldRaceState,
   type WorldServerEvent,
 } from '@/lib/world-protocol';
 
 const CHANNEL = 'portfolio:world:events';
 const PLAYERS_KEY = 'portfolio:world:players';
 const PRESENCE_KEY = 'portfolio:world:presence';
+const RACE_KEY = 'portfolio:world:race';
 const STALE_AFTER_MS = 12_000;
 
 type Session = { id: string | null; lastUpdate: number; lastImpact: number; lastRailBreak: number };
@@ -60,7 +63,12 @@ function validPlayer(player: Partial<WorldPlayerState>) {
     && isFiniteNumber(player.z) && Math.abs(player.z) <= 165
     && isFiniteNumber(player.rotation) && Math.abs(player.rotation) <= Math.PI * 100
     && isFiniteNumber(player.speed) && player.speed >= 0 && player.speed <= 240
-    && isFiniteNumber(player.steer) && Math.abs(player.steer) <= 1;
+    && isFiniteNumber(player.steer) && Math.abs(player.steer) <= 1
+    && (player.ready === undefined || typeof player.ready === 'boolean')
+    && (player.lap === undefined || Number.isInteger(player.lap) && player.lap >= 1 && player.lap <= WORLD_TOTAL_LAPS)
+    && (player.checkpoint === undefined || Number.isInteger(player.checkpoint) && player.checkpoint >= 0 && player.checkpoint <= 32)
+    && (player.finishedAt === undefined || isFiniteNumber(player.finishedAt) && player.finishedAt >= 0)
+    && (player.bestLap === undefined || isFiniteNumber(player.bestLap) && player.bestLap >= 0 && player.bestLap < 3_600_000);
 }
 
 function normalizePlayer(player: Omit<WorldPlayerState, 'updatedAt'>): WorldPlayerState {
@@ -74,8 +82,29 @@ function normalizePlayer(player: Omit<WorldPlayerState, 'updatedAt'>): WorldPlay
     rotation: player.rotation,
     speed: player.speed,
     steer: player.steer,
+    ready: Boolean(player.ready),
+    lap: Number.isInteger(player.lap) ? player.lap : 1,
+    checkpoint: Number.isInteger(player.checkpoint) ? player.checkpoint : 0,
+    finishedAt: isFiniteNumber(player.finishedAt) ? player.finishedAt : 0,
+    bestLap: isFiniteNumber(player.bestLap) ? player.bestLap : 0,
     updatedAt: Date.now(),
   };
+}
+
+function defaultRace(): WorldRaceState {
+  return { id: 'lobby', phase: 'lobby', startAt: 0, participants: [], totalLaps: WORLD_TOTAL_LAPS, results: [], leaderboard: [] };
+}
+
+async function getRace(redis: Redis) {
+  const stored = await redis.get<WorldRaceState | string>(RACE_KEY);
+  if (!stored) return defaultRace();
+  try { return typeof stored === 'string' ? JSON.parse(stored) as WorldRaceState : stored; } catch { return defaultRace(); }
+}
+
+async function getPlayers(redis: Redis) {
+  return (await redis.hvals(PLAYERS_KEY) as unknown[]).flatMap((value) => {
+    try { return [typeof value === 'string' ? JSON.parse(value) as WorldPlayerState : value as WorldPlayerState]; } catch { return []; }
+  });
 }
 
 async function joinRoom(redis: Redis, player: WorldPlayerState) {
@@ -94,9 +123,11 @@ async function joinRoom(redis: Redis, player: WorldPlayerState) {
       end
     end
     local assigned = nil
+    local currentPlayer = nil
     local current = redis.call('HGET', KEYS[2], ARGV[2])
     if current then
-      local ok, currentPlayer = pcall(cjson.decode, current)
+      local ok, decodedCurrent = pcall(cjson.decode, current)
+      if ok then currentPlayer = decodedCurrent end
       if ok and currentPlayer.color and not used[tonumber(currentPlayer.color)] then assigned = tonumber(currentPlayer.color) end
     end
     if not assigned then
@@ -108,6 +139,18 @@ async function joinRoom(redis: Redis, player: WorldPlayerState) {
     if not assigned then return -1 end
     local decodedPlayer = cjson.decode(ARGV[4])
     decodedPlayer.color = assigned
+    if currentPlayer then
+      decodedPlayer.x = currentPlayer.x
+      decodedPlayer.z = currentPlayer.z
+      decodedPlayer.rotation = currentPlayer.rotation
+      decodedPlayer.speed = currentPlayer.speed
+      decodedPlayer.steer = currentPlayer.steer
+      decodedPlayer.ready = currentPlayer.ready
+      decodedPlayer.lap = currentPlayer.lap
+      decodedPlayer.checkpoint = currentPlayer.checkpoint
+      decodedPlayer.finishedAt = currentPlayer.finishedAt
+      decodedPlayer.bestLap = currentPlayer.bestLap
+    end
     redis.call('ZADD', KEYS[1], ARGV[3], ARGV[2])
     redis.call('HSET', KEYS[2], ARGV[2], cjson.encode(decodedPlayer))
     return assigned
@@ -154,19 +197,18 @@ async function handleMessage(ws: WebSocket, data: RawData) {
 
   if (event.type === 'join') {
     if (!validPlayer(event.player)) return ws.close(4002, 'Invalid player');
-    const player = normalizePlayer(event.player);
+    let player = normalizePlayer(event.player);
     const assignedColor = await joinRoom(redis, player);
     if (assignedColor === null) {
-      send(ws, { type: 'room_full', maxPlayers: WORLD_MAX_PLAYERS });
-      return ws.close(4003, 'Room full');
+      send(ws, { type: 'snapshot', players: await getPlayers(redis), maxPlayers: WORLD_MAX_PLAYERS, race: await getRace(redis), spectator: true });
+      return;
     }
-    player.color = assignedColor;
+    const joined = await redis.hget<WorldPlayerState | string>(PLAYERS_KEY, player.id);
+    player = typeof joined === 'string' ? JSON.parse(joined) as WorldPlayerState : joined || { ...player, color: assignedColor };
     session.id = player.id;
     session.lastUpdate = player.updatedAt;
-    const players = (await redis.hvals(PLAYERS_KEY) as unknown[]).flatMap((value) => {
-      try { return [typeof value === 'string' ? JSON.parse(value) as WorldPlayerState : value as WorldPlayerState]; } catch { return []; }
-    });
-    send(ws, { type: 'snapshot', players, maxPlayers: WORLD_MAX_PLAYERS });
+    const players = await getPlayers(redis);
+    send(ws, { type: 'snapshot', players, maxPlayers: WORLD_MAX_PLAYERS, race: await getRace(redis) });
     await publish(redis, { type: 'player', player });
     return;
   }
@@ -201,6 +243,39 @@ async function handleMessage(ws: WebSocket, data: RawData) {
     return;
   }
 
+  if (event.type === 'ready') {
+    if (!session.id) return;
+    const stored = await redis.hget<WorldPlayerState | string>(PLAYERS_KEY, session.id);
+    const existing = typeof stored === 'string' ? JSON.parse(stored) as WorldPlayerState : stored;
+    if (!existing) return;
+    const race = await getRace(redis);
+    if (race.phase === 'countdown') return;
+    const player = normalizePlayer({ ...existing, ready: event.ready });
+    await redis.hset(PLAYERS_KEY, { [player.id]: player });
+    await publish(redis, { type: 'player', player });
+    if (!event.ready) return;
+    const players = await getPlayers(redis);
+    if (players.length === 0 || !players.every((candidate) => candidate.ready)) return;
+    const participants = players.map((candidate) => candidate.id);
+    for (const candidate of players) {
+      const resetPlayer = normalizePlayer({ ...candidate, ready: false, lap: 1, checkpoint: 0, finishedAt: 0, bestLap: 0 });
+      await redis.hset(PLAYERS_KEY, { [candidate.id]: resetPlayer });
+      await publish(redis, { type: 'player', player: resetPlayer });
+    }
+    const nextRace: WorldRaceState = {
+      id: `${Date.now()}`,
+      phase: 'countdown',
+      startAt: Date.now() + 4_000,
+      participants,
+      totalLaps: WORLD_TOTAL_LAPS,
+      results: [],
+      leaderboard: race.leaderboard || [],
+    };
+    await redis.set(RACE_KEY, nextRace);
+    await publish(redis, { type: 'race', race: nextRace });
+    return;
+  }
+
   if (!session.id || event.player.id !== session.id) return;
   const now = Date.now();
   if (now - session.lastUpdate < WORLD_STATE_INTERVAL_MS - 10 || !validPlayer(event.player)) return;
@@ -208,12 +283,54 @@ async function handleMessage(ws: WebSocket, data: RawData) {
   const stored = await redis.hget<WorldPlayerState | string>(PLAYERS_KEY, session.id);
   const existing = typeof stored === 'string' ? JSON.parse(stored) as WorldPlayerState : stored;
   if (!existing) return;
-  const player = normalizePlayer({ ...existing, ...event.player });
+  const activeRace = await getRace(redis);
+  let player = normalizePlayer({ ...existing, ...event.player });
+  if (activeRace.phase === 'countdown' && activeRace.participants.includes(player.id)) {
+    const expectedCheckpoint = (existing.checkpoint + 1) % 10;
+    if (player.checkpoint !== existing.checkpoint && player.checkpoint !== expectedCheckpoint) {
+      player = { ...player, lap: existing.lap, checkpoint: existing.checkpoint, finishedAt: existing.finishedAt, bestLap: existing.bestLap };
+    }
+    if (player.lap < existing.lap || player.lap > existing.lap + 1) player.lap = existing.lap;
+    if (player.finishedAt > 0 && existing.finishedAt === 0) {
+      player.finishedAt = Math.max(1, Date.now() - activeRace.startAt);
+    } else if (existing.finishedAt > 0) {
+      player.finishedAt = existing.finishedAt;
+    }
+  }
   await redis.multi()
     .hset(PLAYERS_KEY, { [player.id]: player })
     .zadd(PRESENCE_KEY, { score: player.updatedAt, member: player.id })
     .publish(CHANNEL, JSON.stringify({ type: 'player', player }))
     .exec();
+
+  const race = activeRace;
+  if (race.phase === 'countdown' && race.participants.includes(player.id) && player.finishedAt > 0) {
+    const players = await getPlayers(redis);
+    const participants = race.participants.flatMap((id) => {
+      const participant = players.find((candidate) => candidate.id === id);
+      return participant ? [participant] : [];
+    });
+    const results = participants
+      .filter((candidate) => candidate.finishedAt > 0)
+      .map((candidate) => ({ id: candidate.id, name: candidate.name, color: candidate.color, finishedAt: candidate.finishedAt, bestLap: candidate.bestLap }))
+      .sort((a, b) => a.finishedAt - b.finishedAt);
+    const nextRace: WorldRaceState = {
+      ...race,
+      phase: participants.length > 0 && participants.every((candidate) => candidate.finishedAt > 0) ? 'finished' : race.phase,
+      results,
+      leaderboard: [...(race.leaderboard || []), ...results]
+        .reduce<typeof results>((leaders, result) => {
+          const existingResult = leaders.find((candidate) => candidate.id === result.id);
+          if (!existingResult) leaders.push(result);
+          else if (result.bestLap > 0 && (existingResult.bestLap === 0 || result.bestLap < existingResult.bestLap)) Object.assign(existingResult, result);
+          return leaders;
+        }, [])
+        .sort((a, b) => (a.bestLap || Infinity) - (b.bestLap || Infinity))
+        .slice(0, WORLD_MAX_PLAYERS),
+    };
+    await redis.set(RACE_KEY, nextRace);
+    await publish(redis, { type: 'race', race: nextRace });
+  }
 }
 
 export function registerWorldSocket(ws: WebSocket) {

@@ -6,7 +6,9 @@ import {
   WORLD_MAX_PLAYERS,
   WORLD_PLAYER_COLORS,
   WORLD_STATE_INTERVAL_MS,
+  WORLD_TOTAL_LAPS,
   type WorldPlayerState,
+  type WorldRaceState,
   type WorldServerEvent,
 } from '@/lib/world-protocol';
 
@@ -38,6 +40,12 @@ interface RemotePlayerVisual {
   targetPosition: THREE.Vector3;
   targetRotation: number;
   speed: number;
+  name: string;
+  color: number;
+  lap: number;
+  checkpoint: number;
+  finishedAt: number;
+  bestLap: number;
   lastUpdate: number;
 }
 
@@ -69,6 +77,15 @@ const TRACK_POINTS: ReadonlyArray<readonly [number, number]> = [
 ];
 const TRACK_SPAWN = { x: 0, z: -125, rotation: Math.atan2(58, 5) };
 const HARD_TURN_POINTS = [3, 4, 5, 12, 13, 14, 17, 18];
+const RACE_CHECKPOINT_INDICES = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18];
+
+interface RaceProgress {
+  lap: number;
+  checkpoint: number;
+  finishedAt: number;
+  bestLap: number;
+  lapStartedAt: number;
+}
 
 function distanceToTrack(x: number, z: number) {
   let closest = Infinity;
@@ -89,6 +106,28 @@ function isPointOnTrack(x: number, z: number, margin = 0) {
 
 function normalizeDriverName(name: string) {
   return name.trim().replace(/[^\p{L}\p{N} _-]/gu, '').replace(/\s+/g, ' ').slice(0, 18);
+}
+
+function formatRaceTime(milliseconds: number) {
+  if (!milliseconds) return '--:--.---';
+  const minutes = Math.floor(milliseconds / 60_000);
+  const seconds = Math.floor((milliseconds % 60_000) / 1_000);
+  const millis = Math.floor(milliseconds % 1_000);
+  return `${minutes}:${String(seconds).padStart(2, '0')}.${String(millis).padStart(3, '0')}`;
+}
+
+function getGridSpawn(slot: number) {
+  const forwardX = Math.sin(TRACK_SPAWN.rotation);
+  const forwardZ = Math.cos(TRACK_SPAWN.rotation);
+  const rightX = Math.cos(TRACK_SPAWN.rotation);
+  const rightZ = -Math.sin(TRACK_SPAWN.rotation);
+  const row = slot === 0 ? 0 : Math.ceil(slot / 2);
+  const lane = slot === 0 ? 0 : slot % 2 === 0 ? 1 : -1;
+  return {
+    x: TRACK_SPAWN.x - forwardX * row * 5.5 + rightX * lane * 2.15,
+    z: TRACK_SPAWN.z - forwardZ * row * 5.5 + rightZ * lane * 2.15,
+    rotation: TRACK_SPAWN.rotation,
+  };
 }
 
 function createDriverNameTag(name: string, color: number) {
@@ -213,6 +252,11 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
   const clientIdRef = useRef('');
   const localPaintMaterialRef = useRef<THREE.MeshStandardMaterial | null>(null);
   const localNameTagRef = useRef<THREE.Sprite | null>(null);
+  const raceStateRef = useRef<WorldRaceState>({ id: 'lobby', phase: 'lobby', startAt: 0, participants: [], totalLaps: WORLD_TOTAL_LAPS, results: [], leaderboard: [] });
+  const restoredRaceIdRef = useRef('');
+  const raceProgressRef = useRef<RaceProgress>({ lap: 1, checkpoint: 0, finishedAt: 0, bestLap: 0, lapStartedAt: 0 });
+  const spectatorRef = useRef(false);
+  const readyRef = useRef(false);
   const carBodyRef = useRef<{
     velocity: THREE.Vector3;
     position: THREE.Vector3;
@@ -232,9 +276,16 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     y: 50 + (TRACK_SPAWN.z / 320) * 100,
     rotation: -THREE.MathUtils.radToDeg(TRACK_SPAWN.rotation),
   });
-  const [multiplayerStatus, setMultiplayerStatus] = useState<'connecting' | 'online' | 'solo' | 'full'>('connecting');
+  const [multiplayerStatus, setMultiplayerStatus] = useState<'connecting' | 'online' | 'solo' | 'full' | 'spectating'>('connecting');
   const [playerCount, setPlayerCount] = useState(1);
   const [playerColor, setPlayerColor] = useState<number>(WORLD_PLAYER_COLORS[0]);
+  const [raceState, setRaceState] = useState<WorldRaceState>(raceStateRef.current);
+  const [raceProgress, setRaceProgress] = useState<RaceProgress>(raceProgressRef.current);
+  const [racePosition, setRacePosition] = useState(1);
+  const [isReady, setIsReady] = useState(false);
+  const [wrongWay, setWrongWay] = useState(false);
+  const [countdown, setCountdown] = useState('');
+  const [opponents, setOpponents] = useState<Array<{ id: string; name: string; color: number; x: number; z: number }>>([]);
   const [nitro, setNitro] = useState(100);
   const [nearbyBuilding, setNearbyBuilding] = useState<BuildingData | null>(null);
   const [activeBuilding, setActiveBuilding] = useState<BuildingData | null>(null);
@@ -309,6 +360,8 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xffd166 });
     const guardRailMaterial = new THREE.MeshStandardMaterial({ color: 0xb7c0ca, roughness: 0.42, metalness: 0.78 });
     const guardRailPostMaterial = new THREE.MeshStandardMaterial({ color: 0x68717d, roughness: 0.58, metalness: 0.62 });
+    const whiteCurbMatrices: THREE.Matrix4[] = [];
+    const redCurbMatrices: THREE.Matrix4[] = [];
     guardRailCollidersRef.current = [];
     const guardedSegmentSides = new Map<number, Set<number>>();
     HARD_TURN_POINTS.forEach((turnIndex) => {
@@ -344,21 +397,16 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
 
       const normalX = dz / length;
       const normalZ = -dx / length;
-      for (let distance = 2.5, stripe = 0; distance < length; distance += 5, stripe += 1) {
+      for (let distance = 2.5, stripe = 0; distance < length - 2.4; distance += 5, stripe += 1) {
         const t = distance / length;
         [-1, 1].forEach((side) => {
-          const curb = new THREE.Mesh(
-            new THREE.BoxGeometry(0.9, 0.1, Math.min(4.8, length - distance)),
-            stripe % 2 === 0 ? curbWhite : curbRed,
-          );
-          curb.position.set(
+          const matrix = new THREE.Matrix4().makeRotationY(angle);
+          matrix.setPosition(
             ax + dx * t + normalX * side * (TRACK_WIDTH / 2 - 0.25),
             0.14,
             az + dz * t + normalZ * side * (TRACK_WIDTH / 2 - 0.25),
           );
-          curb.rotation.y = angle;
-          curb.receiveShadow = true;
-          scene.add(curb);
+          (stripe % 2 === 0 ? whiteCurbMatrices : redCurbMatrices).push(matrix);
         });
       }
 
@@ -412,6 +460,16 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       }
     });
 
+    const curbGeometry = new THREE.BoxGeometry(0.9, 0.1, 4.8);
+    [[whiteCurbMatrices, curbWhite], [redCurbMatrices, curbRed]].forEach(([matrices, material]) => {
+      const transforms = matrices as THREE.Matrix4[];
+      const curbs = new THREE.InstancedMesh(curbGeometry, material as THREE.Material, transforms.length);
+      transforms.forEach((matrix, index) => curbs.setMatrixAt(index, matrix));
+      curbs.instanceMatrix.needsUpdate = true;
+      curbs.receiveShadow = true;
+      scene.add(curbs);
+    });
+
     TRACK_POINTS.forEach(([x, z]) => {
       const corner = new THREE.Mesh(new THREE.CylinderGeometry(TRACK_WIDTH / 2, TRACK_WIDTH / 2, 0.12, 28), roadMaterial);
       corner.position.set(x, 0.06, z);
@@ -432,6 +490,80 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       startTile.rotation.y = startAngle;
       scene.add(startTile);
     }
+
+    const guideMaterial = new THREE.MeshBasicMaterial({ color: 0x65e7ff, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+    const guideShape = new THREE.Shape();
+    guideShape.moveTo(0, 1.2);
+    guideShape.lineTo(-0.65, -0.7);
+    guideShape.lineTo(0, -0.35);
+    guideShape.lineTo(0.65, -0.7);
+    guideShape.closePath();
+    const guideGeometry = new THREE.ShapeGeometry(guideShape);
+    TRACK_POINTS.forEach(([ax, az], index) => {
+      if (index % 2 !== 0) return;
+      const [bx, bz] = TRACK_POINTS[(index + 1) % TRACK_POINTS.length];
+      const guide = new THREE.Mesh(guideGeometry, guideMaterial);
+      guide.position.set((ax + bx) / 2, 0.185, (az + bz) / 2);
+      guide.rotation.x = -Math.PI / 2;
+      guide.rotation.z = -Math.atan2(bx - ax, bz - az);
+      scene.add(guide);
+    });
+
+    const checkpointMaterial = new THREE.MeshStandardMaterial({ color: 0x253044, emissive: 0x65e7ff, emissiveIntensity: 1.3, roughness: 0.35, metalness: 0.7 });
+    RACE_CHECKPOINT_INDICES.slice(1).forEach((pointIndex) => {
+      const [x, z] = TRACK_POINTS[pointIndex];
+      const [nextX, nextZ] = TRACK_POINTS[(pointIndex + 1) % TRACK_POINTS.length];
+      const length = Math.hypot(nextX - x, nextZ - z);
+      const normalX = (nextZ - z) / length;
+      const normalZ = -(nextX - x) / length;
+      [-1, 1].forEach((side) => {
+        const pylon = new THREE.Mesh(new THREE.BoxGeometry(0.24, 2.4, 0.24), checkpointMaterial);
+        pylon.position.set(x + normalX * side * (TRACK_WIDTH / 2 + 0.4), 1.2, z + normalZ * side * (TRACK_WIDTH / 2 + 0.4));
+        scene.add(pylon);
+      });
+    });
+
+    const pitLane = new THREE.Mesh(new THREE.BoxGeometry(7, 0.08, 48), roadMaterial);
+    pitLane.position.set(TRACK_SPAWN.x + startNormalX * 13, 0.05, TRACK_SPAWN.z + startNormalZ * 13);
+    pitLane.rotation.y = startAngle;
+    pitLane.receiveShadow = true;
+    scene.add(pitLane);
+    const pitBuilding = new THREE.Mesh(new THREE.BoxGeometry(7, 5, 44), new THREE.MeshStandardMaterial({ color: 0x30384b, roughness: 0.62, metalness: 0.32 }));
+    pitBuilding.position.set(TRACK_SPAWN.x + startNormalX * 19, 2.5, TRACK_SPAWN.z + startNormalZ * 19);
+    pitBuilding.rotation.y = startAngle;
+    pitBuilding.castShadow = true;
+    scene.add(pitBuilding);
+
+    const standMaterial = new THREE.MeshStandardMaterial({ color: 0x39415a, roughness: 0.7, metalness: 0.24 });
+    [[15, 142, 64, 0], [145, 35, 52, Math.PI / 2]].forEach(([x, z, width, rotation]) => {
+      const stand = new THREE.Group();
+      for (let row = 0; row < 4; row += 1) {
+        const tier = new THREE.Mesh(new THREE.BoxGeometry(width, 0.75, 2.2), standMaterial);
+        tier.position.set(0, 0.5 + row * 0.72, row * 1.4);
+        tier.castShadow = true;
+        stand.add(tier);
+      }
+      stand.position.set(x, 0, z);
+      stand.rotation.y = rotation;
+      scene.add(stand);
+    });
+
+    TRACK_POINTS.filter((_point, index) => index % 3 === 0).forEach(([x, z], index) => {
+      const radialLength = Math.hypot(x, z) || 1;
+      const poleX = x + (x / radialLength) * 13;
+      const poleZ = z + (z / radialLength) * 13;
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.2, 8, 7), guardRailPostMaterial);
+      pole.position.set(poleX, 4, poleZ);
+      scene.add(pole);
+      const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.35, 0.8), new THREE.MeshBasicMaterial({ color: 0xb9f6ff }));
+      lamp.position.set(poleX, 8, poleZ);
+      scene.add(lamp);
+      if (index % 2 === 0) {
+        const light = new THREE.PointLight(0x8aefff, 16, 35, 2);
+        light.position.set(poleX, 7.5, poleZ);
+        scene.add(light);
+      }
+    });
 
     const buildings: BuildingData[] = [
       { x: -35, z: -55, w: 18, h: 14, d: 18, color: 0x556b6b, type: 'museum', label: 'Project Garage', description: 'A drive-through stop for selected builds, backend systems, and experiments from the portfolio.', href: '/#projects' },
@@ -748,13 +880,17 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       keysRef.current.add(e.code);
       if (e.code === 'KeyR') {
         if (carBodyRef.current) {
-          carBodyRef.current.position.set(TRACK_SPAWN.x, 0, TRACK_SPAWN.z);
-          carBodyRef.current.rotation = TRACK_SPAWN.rotation;
+          const checkpointIndex = RACE_CHECKPOINT_INDICES[raceProgressRef.current.checkpoint] || 0;
+          const [x, z] = TRACK_POINTS[checkpointIndex];
+          const [nextX, nextZ] = TRACK_POINTS[(checkpointIndex + 1) % TRACK_POINTS.length];
+          const rotation = Math.atan2(nextX - x, nextZ - z);
+          carBodyRef.current.position.set(x, 0, z);
+          carBodyRef.current.rotation = rotation;
           carBodyRef.current.velocity.set(0, 0, 0);
           carBodyRef.current.steer = 0;
           if (carRef.current) {
-            carRef.current.position.set(TRACK_SPAWN.x, 0, TRACK_SPAWN.z);
-            carRef.current.rotation.y = TRACK_SPAWN.rotation;
+            carRef.current.position.set(x, 0, z);
+            carRef.current.rotation.y = rotation;
           }
         }
       }
@@ -826,8 +962,19 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     let lastGear = 'N';
     let lastSurface: 'ASPHALT' | 'OFF ROAD' = 'ASPHALT';
     let previousLongitudinal = 0;
+    let activeRaceId = raceStateRef.current.id;
+    let checkpointArmed = true;
+    let lastCountdown = '';
     let nitroFlameMeshes: THREE.Mesh[] = [];
     let smokeCursor = 0;
+    let skidCursor = 0;
+    let sparkCursor = 0;
+    let cameraShake = 0;
+    let audioContext: AudioContext | null = null;
+    let engineOscillator: OscillatorNode | null = null;
+    let engineGain: GainNode | null = null;
+    let tireOscillator: OscillatorNode | null = null;
+    let tireGain: GainNode | null = null;
     const smokeOffset = new THREE.Vector3();
     const collisionNormal = new THREE.Vector3();
     const collisionTangent = new THREE.Vector3();
@@ -841,6 +988,70 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       scene.add(particle);
       return particle;
     });
+    const skidGeometry = new THREE.PlaneGeometry(0.28, 1.25);
+    const skidMaterial = new THREE.MeshBasicMaterial({ color: 0x08090d, transparent: true, opacity: 0.5, depthWrite: false });
+    const skidMarks = Array.from({ length: 80 }, () => {
+      const mark = new THREE.Mesh(skidGeometry, skidMaterial);
+      mark.rotation.x = -Math.PI / 2;
+      mark.visible = false;
+      scene.add(mark);
+      return mark;
+    });
+    const sparkGeometry = new THREE.BoxGeometry(0.08, 0.08, 0.32);
+    const sparkMaterial = new THREE.MeshBasicMaterial({ color: 0xffd166 });
+    const sparks = Array.from({ length: 24 }, () => {
+      const spark = new THREE.Mesh(sparkGeometry, sparkMaterial);
+      spark.visible = false;
+      spark.userData.life = 0;
+      spark.userData.velocity = new THREE.Vector3();
+      scene.add(spark);
+      return spark;
+    });
+
+    const startAudio = () => {
+      if (audioContext) {
+        void audioContext.resume();
+        return;
+      }
+      audioContext = new AudioContext();
+      engineOscillator = audioContext.createOscillator();
+      engineGain = audioContext.createGain();
+      engineOscillator.type = 'sawtooth';
+      engineGain.gain.value = 0.012;
+      engineOscillator.connect(engineGain).connect(audioContext.destination);
+      engineOscillator.start();
+      tireOscillator = audioContext.createOscillator();
+      tireGain = audioContext.createGain();
+      tireOscillator.type = 'square';
+      tireOscillator.frequency.value = 95;
+      tireGain.gain.value = 0;
+      tireOscillator.connect(tireGain).connect(audioContext.destination);
+      tireOscillator.start();
+    };
+    window.addEventListener('keydown', startAudio, { once: true });
+    window.addEventListener('pointerdown', startAudio, { once: true });
+
+    const triggerImpactFeedback = (strength: number) => {
+      cameraShake = Math.min(1.2, cameraShake + strength / 24);
+      for (let index = 0; index < Math.min(8, Math.ceil(strength / 3)); index += 1) {
+        const spark = sparks[sparkCursor++ % sparks.length];
+        spark.position.copy(body.position).setY(0.55);
+        (spark.userData.velocity as THREE.Vector3).set((Math.random() - 0.5) * strength, 2 + Math.random() * 3, (Math.random() - 0.5) * strength);
+        spark.userData.life = 0.35 + Math.random() * 0.3;
+        spark.visible = true;
+      }
+      if (audioContext) {
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.type = 'square';
+        oscillator.frequency.setValueAtTime(90 + strength * 4, audioContext.currentTime);
+        gain.gain.setValueAtTime(Math.min(0.16, strength / 120), audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.16);
+        oscillator.connect(gain).connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.17);
+      }
+    };
 
     const createNitroFlame = () => {
       const flameGeom = new THREE.ConeGeometry(0.6, 3.5, 12);
@@ -875,6 +1086,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       if (normalSpeed >= 0) return;
 
       const impactSpeed = -normalSpeed;
+      triggerImpactFeedback(impactSpeed);
       collisionTangent.copy(body.velocity).addScaledVector(collisionNormal, -normalSpeed);
       const tangentRetention = THREE.MathUtils.clamp(0.82 - impactSpeed * 0.018, 0.38, 0.76);
       body.velocity
@@ -908,6 +1120,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       collisionTangent.copy(body.velocity).sub(movingVelocity);
       const relativeNormalSpeed = collisionTangent.dot(collisionNormal);
       if (relativeNormalSpeed >= 0) return null;
+      triggerImpactFeedback(-relativeNormalSpeed);
       body.velocity.addScaledVector(collisionNormal, -relativeNormalSpeed * 0.82);
       body.velocity.multiplyScalar(0.94);
       body.steer *= 0.7;
@@ -919,11 +1132,52 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
 
       const delta = Math.min(clock.getDelta(), 0.1);
       const dt = Math.min(delta, 0.05);
+      const currentRace = raceStateRef.current;
+      const nowMs = Date.now();
+      const isParticipant = currentRace.participants.includes(clientIdRef.current);
+      const isRaceLocked = spectatorRef.current
+        || (currentRace.phase === 'countdown' && isParticipant && nowMs < currentRace.startAt)
+        || raceProgressRef.current.finishedAt > 0;
+
+      if (currentRace.id !== activeRaceId && isParticipant) {
+        activeRaceId = currentRace.id;
+        checkpointArmed = true;
+        if (restoredRaceIdRef.current === currentRace.id) {
+          restoredRaceIdRef.current = '';
+        } else {
+          const progress = { lap: 1, checkpoint: 0, finishedAt: 0, bestLap: 0, lapStartedAt: currentRace.startAt };
+          raceProgressRef.current = progress;
+          setRaceProgress(progress);
+          const gridSpawn = getGridSpawn(Math.max(0, currentRace.participants.indexOf(clientIdRef.current)));
+          body.position.set(gridSpawn.x, 0, gridSpawn.z);
+          body.rotation = gridSpawn.rotation;
+          body.velocity.set(0, 0, 0);
+          body.steer = 0;
+        }
+      }
+
+      let nextCountdown = '';
+      if (currentRace.phase === 'countdown' && isParticipant && nowMs < currentRace.startAt) {
+        nextCountdown = String(Math.max(1, Math.ceil((currentRace.startAt - nowMs) / 1000)));
+      } else if (currentRace.phase === 'countdown' && isParticipant && nowMs - currentRace.startAt < 900) {
+        nextCountdown = 'GO!';
+      }
+      if (nextCountdown !== lastCountdown) {
+        lastCountdown = nextCountdown;
+        setCountdown(nextCountdown);
+      }
 
       let throttleInput = keysRef.current.has('KeyW') || keysRef.current.has('ArrowUp') ? 1 : 0;
       let brakeInput = keysRef.current.has('KeyS') || keysRef.current.has('ArrowDown') ? 1 : 0;
       let steerInput = (keysRef.current.has('KeyA') || keysRef.current.has('ArrowLeft') ? 1 : 0) - (keysRef.current.has('KeyD') || keysRef.current.has('ArrowRight') ? 1 : 0);
       const handbrakeInput = keysRef.current.has('Space');
+
+      if (isRaceLocked) {
+        throttleInput = 0;
+        brakeInput = 0;
+        steerInput = 0;
+        body.velocity.multiplyScalar(Math.exp(-12 * dt));
+      }
 
       const gamepads = navigator.getGamepads();
       forward.set(0, 0, 1).applyAxisAngle(upAxis, body.rotation);
@@ -993,6 +1247,30 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       body.position.addScaledVector(body.velocity, dt);
       body.position.y = 0;
 
+      if (currentRace.phase === 'countdown' && isParticipant && nowMs >= currentRace.startAt && raceProgressRef.current.finishedAt === 0) {
+        const progress = raceProgressRef.current;
+        const targetCheckpoint = (progress.checkpoint + 1) % RACE_CHECKPOINT_INDICES.length;
+        const [checkpointX, checkpointZ] = TRACK_POINTS[RACE_CHECKPOINT_INDICES[targetCheckpoint]];
+        const checkpointDistance = Math.hypot(body.position.x - checkpointX, body.position.z - checkpointZ);
+        if (checkpointDistance > TRACK_WIDTH) checkpointArmed = true;
+        if (checkpointArmed && checkpointDistance < TRACK_WIDTH * 0.68) {
+          checkpointArmed = false;
+          const updated = { ...progress, checkpoint: targetCheckpoint };
+          if (targetCheckpoint === 0) {
+            const lapDuration = nowMs - progress.lapStartedAt;
+            updated.bestLap = progress.bestLap === 0 ? lapDuration : Math.min(progress.bestLap, lapDuration);
+            if (progress.lap >= currentRace.totalLaps) {
+              updated.finishedAt = nowMs - currentRace.startAt;
+            } else {
+              updated.lap = progress.lap + 1;
+              updated.lapStartedAt = nowMs;
+            }
+          }
+          raceProgressRef.current = updated;
+          setRaceProgress(updated);
+        }
+      }
+
       wheels.forEach((wheel) => {
         wheel.rotation.x += nextLongitudinal * dt * 1.75;
         if (wheel.userData.isFrontWheel) {
@@ -1010,6 +1288,15 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
           particle.visible = true;
         });
       }
+      if (isDrifting && frameCount % 2 === 0) {
+        [-0.78, 0.78].forEach((side) => {
+          const mark = skidMarks[skidCursor++ % skidMarks.length];
+          smokeOffset.set(side, 0.17, -1.58).applyAxisAngle(upAxis, body.rotation);
+          mark.position.copy(body.position).add(smokeOffset);
+          mark.rotation.z = -body.rotation;
+          mark.visible = true;
+        });
+      }
       smokeParticles.forEach((particle) => {
         if (particle.userData.life <= 0) return;
         particle.userData.life -= dt;
@@ -1018,6 +1305,22 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         (particle.material as THREE.MeshBasicMaterial).opacity = Math.max(0, particle.userData.life * 0.28);
         if (particle.userData.life <= 0) particle.visible = false;
       });
+      sparks.forEach((spark) => {
+        if (spark.userData.life <= 0) return;
+        spark.userData.life -= dt;
+        const velocity = spark.userData.velocity as THREE.Vector3;
+        velocity.y -= 9.8 * dt;
+        spark.position.addScaledVector(velocity, dt);
+        spark.rotation.x += dt * 12;
+        if (spark.position.y < 0.12 || spark.userData.life <= 0) spark.visible = false;
+      });
+
+      if (audioContext && engineOscillator && engineGain && tireGain) {
+        const audioNow = audioContext.currentTime;
+        engineOscillator.frequency.setTargetAtTime(55 + Math.abs(nextLongitudinal) * 7.5, audioNow, 0.04);
+        engineGain.gain.setTargetAtTime(isRaceLocked ? 0.006 : 0.012 + Math.abs(nextLongitudinal) / 2_800, audioNow, 0.08);
+        tireGain.gain.setTargetAtTime(isDrifting ? Math.min(0.055, Math.abs(lateral) / 220 + 0.018) : 0, audioNow, 0.05);
+      }
 
       buildings.forEach((b) => {
         const halfW = b.w / 2 + 1.15;
@@ -1069,6 +1372,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         if (Math.hypot(body.position.x - closestX, body.position.z - closestZ) < 1.55) {
           const impactSpeed = -body.velocity.dot(collisionNormal.set(rail.inwardX, 0, rail.inwardZ));
           if (impactSpeed > 70 / 3.6) {
+            triggerImpactFeedback(impactSpeed);
             rail.active = false;
             rail.group.visible = false;
             rail.regenerateAt = Date.now() + 7_500;
@@ -1155,6 +1459,40 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
           lastSurface = nextSurface;
           setSurface(nextSurface);
         }
+        let nearestSegment = 0;
+        let nearestTrackDistance = Infinity;
+        TRACK_POINTS.forEach(([ax, az], index) => {
+          const [bx, bz] = TRACK_POINTS[(index + 1) % TRACK_POINTS.length];
+          const dx = bx - ax;
+          const dz = bz - az;
+          const lengthSquared = dx * dx + dz * dz;
+          const t = THREE.MathUtils.clamp(((body.position.x - ax) * dx + (body.position.z - az) * dz) / lengthSquared, 0, 1);
+          const distance = Math.hypot(body.position.x - (ax + dx * t), body.position.z - (az + dz * t));
+          if (distance < nearestTrackDistance) {
+            nearestTrackDistance = distance;
+            nearestSegment = index;
+          }
+        });
+        const [segmentAx, segmentAz] = TRACK_POINTS[nearestSegment];
+        const [segmentBx, segmentBz] = TRACK_POINTS[(nearestSegment + 1) % TRACK_POINTS.length];
+        const segmentLength = Math.hypot(segmentBx - segmentAx, segmentBz - segmentAz);
+        const travelSpeed = Math.hypot(body.velocity.x, body.velocity.z) || 1;
+        setWrongWay(onRoad && Math.abs(nextLongitudinal) > 4
+          && (body.velocity.x / travelSpeed) * ((segmentBx - segmentAx) / segmentLength)
+            + (body.velocity.z / travelSpeed) * ((segmentBz - segmentAz) / segmentLength) < -0.35);
+
+        const localProgress = raceProgressRef.current;
+        const localScore = localProgress.finishedAt > 0
+          ? 1_000_000 - localProgress.finishedAt
+          : localProgress.lap * 100 + localProgress.checkpoint;
+        let position = 1;
+        remotePlayersRef.current.forEach((remote) => {
+          const remoteScore = remote.finishedAt > 0
+            ? 1_000_000 - remote.finishedAt
+            : remote.lap * 100 + remote.checkpoint;
+          if (remoteScore > localScore) position += 1;
+        });
+        setRacePosition(position);
         setMapPosition({ x: 50 + (body.position.x / 320) * 100, y: 50 + (body.position.z / 320) * 100, rotation: -THREE.MathUtils.radToDeg(body.rotation) });
         let nearest: BuildingData | null = null;
         let nearestDist = Infinity;
@@ -1182,10 +1520,28 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       }
 
       if (cameraRef.current) {
+        const spectated = spectatorRef.current || raceProgressRef.current.finishedAt > 0
+          ? remotePlayersRef.current.values().next().value as RemotePlayerVisual | undefined
+          : undefined;
+        if (spectated) {
+          forward.set(0, 0, 1).applyAxisAngle(upAxis, spectated.group.rotation.y);
+          cameraOffset.set(0, 6.5, -12).applyAxisAngle(upAxis, spectated.group.rotation.y);
+          targetCameraPos.copy(spectated.group.position).add(cameraOffset);
+          cameraRef.current.position.lerp(targetCameraPos, 1 - Math.exp(-6 * dt));
+          cameraShake *= Math.exp(-9 * dt);
+          cameraRef.current.position.x += (Math.random() - 0.5) * cameraShake;
+          cameraRef.current.position.y += (Math.random() - 0.5) * cameraShake;
+          cameraRef.current.lookAt(spectated.group.position.x, 1.1, spectated.group.position.z);
+          rendererRef.current?.render(scene, cameraRef.current);
+          return;
+        }
         const speedFactor = Math.min(Math.abs(nextLongitudinal) / 35, 1);
         cameraOffset.set(-body.steer * 1.4, 5.4 + speedFactor * 1.8, -10.5 - speedFactor * 3.5).applyAxisAngle(upAxis, body.rotation);
         targetCameraPos.copy(body.position).add(cameraOffset);
         cameraRef.current.position.lerp(targetCameraPos, 1 - Math.exp(-7 * dt));
+        cameraShake *= Math.exp(-9 * dt);
+        cameraRef.current.position.x += (Math.random() - 0.5) * cameraShake;
+        cameraRef.current.position.y += (Math.random() - 0.5) * cameraShake;
         const cameraTarget = body.position.clone().addScaledVector(forward, 4 + speedFactor * 4);
         cameraRef.current.lookAt(cameraTarget.x, cameraTarget.y + 0.65, cameraTarget.z);
         cameraRef.current.fov = THREE.MathUtils.lerp(cameraRef.current.fov, 64 + speedFactor * 10 + (canBoost ? 6 : 0), 1 - Math.exp(-5 * dt));
@@ -1204,6 +1560,17 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         (particle.material as THREE.Material).dispose();
       });
       smokeGeometry.dispose();
+      skidMarks.forEach((mark) => scene.remove(mark));
+      skidGeometry.dispose();
+      skidMaterial.dispose();
+      sparks.forEach((spark) => scene.remove(spark));
+      sparkGeometry.dispose();
+      sparkMaterial.dispose();
+      window.removeEventListener('keydown', startAudio);
+      window.removeEventListener('pointerdown', startAudio);
+      engineOscillator?.stop();
+      tireOscillator?.stop();
+      void audioContext?.close();
     };
   }, []);
 
@@ -1245,11 +1612,13 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         materials.forEach((material) => material.dispose());
       });
       remotePlayersRef.current.delete(id);
+      setOpponents(Array.from(remotePlayersRef.current, ([remoteId, visual]) => ({ id: remoteId, name: visual.name, color: visual.color, x: visual.targetPosition.x, z: visual.targetPosition.z })));
     };
 
     const clearRemotes = () => {
       Array.from(remotePlayersRef.current.keys()).forEach(removeRemote);
       setPlayerCount(1);
+      setOpponents([]);
     };
 
     const upsertRemote = (player: WorldPlayerState) => {
@@ -1267,6 +1636,12 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
           targetPosition: new THREE.Vector3(player.x, 0, player.z),
           targetRotation: player.rotation,
           speed: player.speed,
+          name: player.name,
+          color: player.color,
+          lap: player.lap,
+          checkpoint: player.checkpoint,
+          finishedAt: player.finishedAt,
+          bestLap: player.bestLap,
           lastUpdate: Date.now(),
         };
         remotePlayersRef.current.set(player.id, remote);
@@ -1277,8 +1652,21 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         remote.targetPosition.set(player.x, 0, player.z);
         remote.targetRotation = player.rotation;
         remote.speed = player.speed;
+        remote.name = player.name;
+        remote.color = player.color;
+        remote.lap = player.lap;
+        remote.checkpoint = player.checkpoint;
+        remote.finishedAt = player.finishedAt;
+        remote.bestLap = player.bestLap;
         remote.lastUpdate = Date.now();
       }
+      setOpponents(Array.from(remotePlayersRef.current, ([id, visual]) => ({
+        id,
+        name: visual.name,
+        color: visual.color,
+        x: visual.targetPosition.x,
+        z: visual.targetPosition.z,
+      })));
       setPlayerCount(Math.min(WORLD_MAX_PLAYERS, remotePlayersRef.current.size + 1));
     };
 
@@ -1296,6 +1684,11 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
           rotation: body.rotation,
           speed: body.velocity.length() * 3.6,
           steer: body.steer,
+          ready: false,
+          lap: 1,
+          checkpoint: 0,
+          finishedAt: 0,
+          bestLap: 0,
         },
       }));
     };
@@ -1316,14 +1709,43 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         try { event = JSON.parse(String(message.data)) as WorldServerEvent; } catch { return; }
         if (event.type === 'snapshot') {
           clearRemotes();
+          raceStateRef.current = event.race;
+          setRaceState(event.race);
+          spectatorRef.current = Boolean(event.spectator);
+          if (carRef.current) carRef.current.visible = !event.spectator;
           const localPlayer = event.players.find((player) => player.id === clientId);
-          if (localPlayer) applyLocalColor(localPlayer.color, localPlayer.name);
+          if (localPlayer) {
+            applyLocalColor(localPlayer.color, localPlayer.name);
+            readyRef.current = localPlayer.ready;
+            setIsReady(localPlayer.ready);
+            if (event.race.participants.includes(clientId) && carBodyRef.current) {
+              restoredRaceIdRef.current = event.race.id;
+              carBodyRef.current.position.set(localPlayer.x, 0, localPlayer.z);
+              carBodyRef.current.rotation = localPlayer.rotation;
+              const restoredProgress = {
+                lap: localPlayer.lap,
+                checkpoint: localPlayer.checkpoint,
+                finishedAt: localPlayer.finishedAt,
+                bestLap: localPlayer.bestLap,
+                lapStartedAt: Date.now(),
+              };
+              raceProgressRef.current = restoredProgress;
+              setRaceProgress(restoredProgress);
+            }
+          }
           event.players.forEach(upsertRemote);
           setPlayerCount(Math.max(1, Math.min(event.maxPlayers, event.players.length)));
-          setMultiplayerStatus('online');
+          setMultiplayerStatus(event.spectator ? 'spectating' : 'online');
         } else if (event.type === 'player') {
-          if (event.player.id === clientId) applyLocalColor(event.player.color, event.player.name);
+          if (event.player.id === clientId) {
+            applyLocalColor(event.player.color, event.player.name);
+            readyRef.current = event.player.ready;
+            setIsReady(event.player.ready);
+          }
           else upsertRemote(event.player);
+        } else if (event.type === 'race') {
+          raceStateRef.current = event.race;
+          setRaceState(event.race);
         } else if (event.type === 'leave') {
           removeRemote(event.id);
           setPlayerCount(remotePlayersRef.current.size + 1);
@@ -1367,6 +1789,11 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
           rotation: body.rotation,
           speed: body.velocity.length() * 3.6,
           steer: body.steer,
+          ready: readyRef.current,
+          lap: raceProgressRef.current.lap,
+          checkpoint: raceProgressRef.current.checkpoint,
+          finishedAt: raceProgressRef.current.finishedAt,
+          bestLap: raceProgressRef.current.bestLap,
         },
       }));
     }, WORLD_STATE_INTERVAL_MS);
@@ -1386,13 +1813,17 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
 
   const resetCar = useCallback(() => {
     if (carBodyRef.current) {
-      carBodyRef.current.position.set(TRACK_SPAWN.x, 0, TRACK_SPAWN.z);
-      carBodyRef.current.rotation = TRACK_SPAWN.rotation;
+      const checkpointIndex = RACE_CHECKPOINT_INDICES[raceProgressRef.current.checkpoint] || 0;
+      const [x, z] = TRACK_POINTS[checkpointIndex];
+      const [nextX, nextZ] = TRACK_POINTS[(checkpointIndex + 1) % TRACK_POINTS.length];
+      const rotation = Math.atan2(nextX - x, nextZ - z);
+      carBodyRef.current.position.set(x, 0, z);
+      carBodyRef.current.rotation = rotation;
       carBodyRef.current.velocity.set(0, 0, 0);
       carBodyRef.current.steer = 0;
       if (carRef.current) {
-        carRef.current.position.set(TRACK_SPAWN.x, 0, TRACK_SPAWN.z);
-        carRef.current.rotation.y = TRACK_SPAWN.rotation;
+        carRef.current.position.set(x, 0, z);
+        carRef.current.rotation.y = rotation;
       }
     }
   }, []);
@@ -1403,6 +1834,15 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     } else if (activeBuildingRef.current) {
       setActiveBuilding(null);
     }
+  }, []);
+
+  const toggleReady = useCallback(() => {
+    const socket = multiplayerSocketRef.current;
+    if (!socket || socket.readyState !== WebSocket.OPEN || spectatorRef.current || raceStateRef.current.phase === 'countdown') return;
+    const nextReady = !readyRef.current;
+    readyRef.current = nextReady;
+    setIsReady(nextReady);
+    socket.send(JSON.stringify({ type: 'ready', ready: nextReady }));
   }, []);
 
   return (
@@ -1436,10 +1876,49 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       </div>
 
       <div className="world-mission">
-        <span className="world-mission-kicker">Free roam</span>
-        <strong>Drive. Drift. Explore.</strong>
-        <small>Highlighted buildings are interactive portfolio stops</small>
+        <span className="world-mission-kicker">Circuit race</span>
+        <strong>{raceState.phase === 'countdown' ? 'Race in progress' : raceState.phase === 'finished' ? 'Race complete' : 'Waiting on the grid'}</strong>
+        <small>Three laps · ten checkpoints · eight drivers</small>
       </div>
+
+      <div className="world-race-strip">
+        <span><small>POSITION</small><strong>{racePosition}/{Math.max(1, playerCount)}</strong></span>
+        <span><small>LAP</small><strong>{raceProgress.lap}/{raceState.totalLaps}</strong></span>
+        <span><small>BEST</small><strong>{formatRaceTime(raceProgress.bestLap)}</strong></span>
+      </div>
+
+      {countdown && <div className={`world-countdown${countdown === 'GO!' ? ' is-go' : ''}`}>{countdown}</div>}
+      {wrongWay && <div className="world-wrong-way">WRONG WAY</div>}
+
+      {multiplayerStatus === 'online' && raceState.phase !== 'countdown' && (
+        <div className="world-ready-card">
+          <span>{raceState.phase === 'finished' ? 'NEXT RACE' : 'RACE LOBBY'}</span>
+          <strong>{isReady ? 'READY' : 'JOIN THE GRID'}</strong>
+          <button type="button" onClick={toggleReady}>{isReady ? 'Cancel ready' : 'Ready up'}</button>
+        </div>
+      )}
+
+      {(multiplayerStatus === 'spectating' || raceProgress.finishedAt > 0) && (
+        <div className="world-spectator-banner">SPECTATING · {opponents[0]?.name || 'WAITING FOR DRIVER'}</div>
+      )}
+
+      {raceState.phase === 'finished' && raceState.results.length > 0 && (
+        <div className="world-results">
+          <span>RACE RESULTS</span>
+          {raceState.results.map((result, index) => (
+            <div key={result.id}><i style={{ backgroundColor: `#${result.color.toString(16).padStart(6, '0')}` }} /><b>{index + 1}</b><strong>{result.name}</strong><time>{formatRaceTime(result.finishedAt)}</time></div>
+          ))}
+        </div>
+      )}
+
+      {raceState.phase === 'lobby' && (raceState.leaderboard || []).length > 0 && (
+        <div className="world-results">
+          <span>SESSION BEST LAPS</span>
+          {raceState.leaderboard.slice(0, 5).map((result, index) => (
+            <div key={result.id}><i style={{ backgroundColor: `#${result.color.toString(16).padStart(6, '0')}` }} /><b>{index + 1}</b><strong>{result.name}</strong><time>{formatRaceTime(result.bestLap)}</time></div>
+          ))}
+        </div>
+      )}
 
       {showControls && (
         <div className="world-panel world-controls-panel">
@@ -1468,6 +1947,14 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
               <polyline className="world-map-track-line" points={`${TRACK_POINTS.map(([x, z]) => `${50 + (x / 320) * 100},${50 + (z / 320) * 100}`).join(' ')} 50,${50 + (TRACK_POINTS[0][1] / 320) * 100}`} />
             </svg>
             <div className="world-map-player" style={{ left: `${mapPosition.x}%`, top: `${mapPosition.y}%`, transform: `translate(-50%, -50%) rotate(${mapPosition.rotation}deg)`, backgroundColor: `#${playerColor.toString(16).padStart(6, '0')}` }} />
+            {opponents.map((opponent) => (
+              <div
+                key={opponent.id}
+                className="world-map-opponent"
+                title={opponent.name}
+                style={{ left: `${50 + (opponent.x / 320) * 100}%`, top: `${50 + (opponent.z / 320) * 100}%`, backgroundColor: `#${opponent.color.toString(16).padStart(6, '0')}` }}
+              />
+            ))}
             {buildingsRef.current.map((b, i) => (
               <div key={i} className={`world-map-building${b.type ? ` world-map-building-${b.type}` : ''}`} style={{ left: `${50 + (b.x / 320) * 100}%`, top: `${50 + (b.z / 320) * 100}%` }} />
             ))}
