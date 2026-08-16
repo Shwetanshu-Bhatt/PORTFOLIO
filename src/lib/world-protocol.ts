@@ -17,6 +17,7 @@ export interface WorldPlayerState {
   name: string;
   color: number;
   x: number;
+  y: number;
   z: number;
   rotation: number;
   speed: number;

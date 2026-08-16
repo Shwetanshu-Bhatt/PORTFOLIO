@@ -59,8 +59,9 @@ function isFiniteNumber(value: unknown): value is number {
 function validPlayer(player: Partial<WorldPlayerState>) {
   return typeof player.id === 'string'
     && /^[a-zA-Z0-9_-]{8,64}$/.test(player.id)
-    && isFiniteNumber(player.x) && Math.abs(player.x) <= 165
-    && isFiniteNumber(player.z) && Math.abs(player.z) <= 165
+    && isFiniteNumber(player.x) && Math.abs(player.x) <= 360
+    && isFiniteNumber(player.y) && player.y >= -2 && player.y <= 30
+    && isFiniteNumber(player.z) && Math.abs(player.z) <= 360
     && isFiniteNumber(player.rotation) && Math.abs(player.rotation) <= Math.PI * 100
     && isFiniteNumber(player.speed) && player.speed >= 0 && player.speed <= 240
     && isFiniteNumber(player.steer) && Math.abs(player.steer) <= 1
@@ -78,6 +79,7 @@ function normalizePlayer(player: Omit<WorldPlayerState, 'updatedAt'>): WorldPlay
     name,
     color: Number.isInteger(player.color) ? Math.min(0xffffff, Math.max(0, player.color)) : 0xff5a36,
     x: player.x,
+    y: player.y,
     z: player.z,
     rotation: player.rotation,
     speed: player.speed,
@@ -141,6 +143,7 @@ async function joinRoom(redis: Redis, player: WorldPlayerState) {
     decodedPlayer.color = assigned
     if currentPlayer then
       decodedPlayer.x = currentPlayer.x
+      decodedPlayer.y = currentPlayer.y or decodedPlayer.y
       decodedPlayer.z = currentPlayer.z
       decodedPlayer.rotation = currentPlayer.rotation
       decodedPlayer.speed = currentPlayer.speed
@@ -366,7 +369,11 @@ export function registerWorldSocket(ws: WebSocket) {
   ws.on('close', () => {
     const session = sockets.get(ws);
     sockets.delete(ws);
-    if (session?.id) void removePlayer(redis, session.id, session.lastUpdate);
+    // Vercel rotates long-lived function connections. Give the browser time to
+    // reconnect so a transient socket close does not wipe lobby/race progress.
+    if (session?.id) {
+      setTimeout(() => void removePlayer(redis, session.id!, session.lastUpdate), 5_000);
+    }
   });
   ws.on('error', () => ws.close());
 }

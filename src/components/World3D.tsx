@@ -61,6 +61,7 @@ interface GuardRailCollider {
   az: number;
   bx: number;
   bz: number;
+  height: number;
   inwardX: number;
   inwardZ: number;
   group: THREE.Group;
@@ -68,16 +69,36 @@ interface GuardRailCollider {
   regenerateAt: number;
 }
 
-const TRACK_WIDTH = 16;
-const TRACK_POINTS: ReadonlyArray<readonly [number, number]> = [
-  [0, -125], [58, -120], [105, -92], [132, -56], [114, -25], [133, 8],
-  [112, 50], [78, 87], [35, 113], [-15, 122], [-60, 110], [-98, 82],
-  [-125, 45], [-108, 15], [-128, -18], [-112, -60], [-78, -100], [-42, -112],
-  [-20, -94],
-];
-const TRACK_SPAWN = { x: 0, z: -125, rotation: Math.atan2(58, 5) };
-const HARD_TURN_POINTS = [3, 4, 5, 12, 13, 14, 17, 18];
-const RACE_CHECKPOINT_INDICES = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18];
+const TRACK_WIDTH = 18;
+const TRACK_WORLD_SIZE = 720;
+const TRACK_SAMPLE_COUNT = 112;
+const trackCurve = new THREE.CatmullRomCurve3([
+  new THREE.Vector3(0, 0, -285), new THREE.Vector3(120, 0, -278),
+  new THREE.Vector3(235, 0, -220), new THREE.Vector3(292, 0, -110),
+  new THREE.Vector3(282, 0, 25), new THREE.Vector3(230, 0, 145),
+  new THREE.Vector3(145, 4, 235), new THREE.Vector3(45, 15, 92),
+  new THREE.Vector3(0, 17, 0), new THREE.Vector3(-92, 7, -105),
+  new THREE.Vector3(-225, 0, -195), new THREE.Vector3(-298, 0, -72),
+  new THREE.Vector3(-282, 0, 80), new THREE.Vector3(-205, 0, 205),
+  new THREE.Vector3(-82, 0, 285), new THREE.Vector3(62, 0, 280),
+  new THREE.Vector3(180, 0, 218), new THREE.Vector3(236, 0, 110),
+  new THREE.Vector3(112, 0, 48), new THREE.Vector3(0, 0, 0),
+  new THREE.Vector3(-105, 0, -42), new THREE.Vector3(-112, 0, -155),
+  new THREE.Vector3(-52, 0, -252),
+], true, 'centripetal');
+const TRACK_PATH = Array.from({ length: TRACK_SAMPLE_COUNT }, (_value, index) => trackCurve.getPointAt(index / TRACK_SAMPLE_COUNT));
+const TRACK_POINTS: ReadonlyArray<readonly [number, number]> = TRACK_PATH.map((point) => [point.x, point.z]);
+const TRACK_HEIGHTS = TRACK_PATH.map((point) => point.y);
+const TRACK_SPAWN = {
+  x: TRACK_PATH[0].x,
+  y: TRACK_PATH[0].y,
+  z: TRACK_PATH[0].z,
+  rotation: Math.atan2(TRACK_PATH[1].x - TRACK_PATH[0].x, TRACK_PATH[1].z - TRACK_PATH[0].z),
+};
+const HARD_TURN_POINTS = [13, 19, 27, 46, 55, 68, 79, 91, 102];
+const RACE_CHECKPOINT_INDICES = Array.from({ length: 12 }, (_value, index) => Math.floor(index * TRACK_SAMPLE_COUNT / 12));
+const DIRT_SEGMENT_START = Math.floor(TRACK_SAMPLE_COUNT * 0.42);
+const DIRT_SEGMENT_END = Math.floor(TRACK_SAMPLE_COUNT * 0.57);
 
 interface RaceProgress {
   lap: number;
@@ -87,17 +108,38 @@ interface RaceProgress {
   lapStartedAt: number;
 }
 
-function distanceToTrack(x: number, z: number) {
+function nearestTrackPoint(x: number, z: number, y?: number) {
   let closest = Infinity;
+  let closestScore = Infinity;
+  let closestIndex = 0;
+  let closestT = 0;
   TRACK_POINTS.forEach(([ax, az], index) => {
     const [bx, bz] = TRACK_POINTS[(index + 1) % TRACK_POINTS.length];
     const dx = bx - ax;
     const dz = bz - az;
     const lengthSquared = dx * dx + dz * dz;
     const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / lengthSquared));
-    closest = Math.min(closest, Math.hypot(x - (ax + dx * t), z - (az + dz * t)));
+    const distance = Math.hypot(x - (ax + dx * t), z - (az + dz * t));
+    const nextIndex = (index + 1) % TRACK_POINTS.length;
+    const height = THREE.MathUtils.lerp(TRACK_HEIGHTS[index], TRACK_HEIGHTS[nextIndex], t);
+    const score = y === undefined ? distance : Math.hypot(distance, (y - height) * 0.8);
+    if (score < closestScore) {
+      closestScore = score;
+      closest = distance;
+      closestIndex = index;
+      closestT = t;
+    }
   });
-  return closest;
+  const nextIndex = (closestIndex + 1) % TRACK_POINTS.length;
+  return {
+    distance: closest,
+    index: closestIndex,
+    height: THREE.MathUtils.lerp(TRACK_HEIGHTS[closestIndex], TRACK_HEIGHTS[nextIndex], closestT),
+  };
+}
+
+function distanceToTrack(x: number, z: number) {
+  return nearestTrackPoint(x, z).distance;
 }
 
 function isPointOnTrack(x: number, z: number, margin = 0) {
@@ -125,6 +167,7 @@ function getGridSpawn(slot: number) {
   const lane = slot === 0 ? 0 : slot % 2 === 0 ? 1 : -1;
   return {
     x: TRACK_SPAWN.x - forwardX * row * 5.5 + rightX * lane * 2.15,
+    y: TRACK_SPAWN.y,
     z: TRACK_SPAWN.z - forwardZ * row * 5.5 + rightZ * lane * 2.15,
     rotation: TRACK_SPAWN.rotation,
   };
@@ -170,31 +213,31 @@ function createRemoteCar(color: number, name: string) {
   const bodyMaterial = new THREE.MeshStandardMaterial({ color, roughness: 0.32, metalness: 0.58 });
   const darkMaterial = new THREE.MeshStandardMaterial({ color: 0x07090d, roughness: 0.78, metalness: 0.12 });
   const glassMaterial = new THREE.MeshStandardMaterial({ color: 0x14243a, roughness: 0.12, metalness: 0.35 });
-  const body = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.55, 4.75), bodyMaterial);
-  body.position.y = 0.52;
+  const body = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.05, 4.2), bodyMaterial);
+  body.position.y = 1.15;
   body.castShadow = true;
   car.add(body);
-  const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.58, 1.75), glassMaterial);
-  cabin.position.set(0, 1.05, -0.2);
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.65, 1.75), glassMaterial);
+  cabin.position.set(0, 1.65, -0.15);
   cabin.castShadow = true;
   car.add(cabin);
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.14, 1.2), bodyMaterial);
-  roof.position.set(0, 1.4, -0.22);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(1.88, 0.14, 1.35), bodyMaterial);
+  roof.position.set(0, 1.98, -0.15);
   roof.castShadow = true;
   car.add(roof);
-  const wheelGeometry = new THREE.CylinderGeometry(0.56, 0.56, 0.46, 18);
-  [[-1.2, 1.45], [1.2, 1.45], [-1.2, -1.45], [1.2, -1.45]].forEach(([x, z]) => {
+  const wheelGeometry = new THREE.CylinderGeometry(0.72, 0.72, 0.58, 18);
+  [[-1.25, 1.5], [1.25, 1.5], [-1.25, -1.5], [1.25, -1.5]].forEach(([x, z]) => {
     const wheel = new THREE.Mesh(wheelGeometry, darkMaterial);
     wheel.rotation.z = Math.PI / 2;
-    wheel.position.set(x, 0.52, z);
+    wheel.position.set(x, 0.72, z);
     wheel.castShadow = true;
     wheel.userData.remoteWheel = true;
     car.add(wheel);
   });
   const tailMaterial = new THREE.MeshBasicMaterial({ color: 0xff2525 });
   [-0.7, 0.7].forEach((x) => {
-    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.14, 0.06), tailMaterial);
-    tail.position.set(x, 0.55, -2.42);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.16, 0.06), tailMaterial);
+    tail.position.set(x, 0.85, -2.48);
     car.add(tail);
   });
   const nameTag = createDriverNameTag(name, color);
@@ -255,6 +298,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
   const raceStateRef = useRef<WorldRaceState>({ id: 'lobby', phase: 'lobby', startAt: 0, participants: [], totalLaps: WORLD_TOTAL_LAPS, results: [], leaderboard: [] });
   const restoredRaceIdRef = useRef('');
   const raceProgressRef = useRef<RaceProgress>({ lap: 1, checkpoint: 0, finishedAt: 0, bestLap: 0, lapStartedAt: 0 });
+  const lastCheckpointRef = useRef(0);
   const spectatorRef = useRef(false);
   const roomSpectatorRef = useRef(false);
   const readyRef = useRef<boolean | null>(null);
@@ -271,10 +315,10 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
   const [showMap, setShowMap] = useState(false);
   const [speed, setSpeed] = useState(0);
   const [gear, setGear] = useState('N');
-  const [surface, setSurface] = useState<'ASPHALT' | 'OFF ROAD'>('ASPHALT');
+  const [surface, setSurface] = useState<'ASPHALT' | 'DIRT' | 'OFF ROAD'>('ASPHALT');
   const [mapPosition, setMapPosition] = useState({
-    x: 50 + (TRACK_SPAWN.x / 320) * 100,
-    y: 50 + (TRACK_SPAWN.z / 320) * 100,
+    x: 50 + (TRACK_SPAWN.x / TRACK_WORLD_SIZE) * 100,
+    y: 50 + (TRACK_SPAWN.z / TRACK_WORLD_SIZE) * 100,
     rotation: -THREE.MathUtils.radToDeg(TRACK_SPAWN.rotation),
   });
   const [multiplayerStatus, setMultiplayerStatus] = useState<'connecting' | 'online' | 'solo' | 'full' | 'spectating'>('connecting');
@@ -308,14 +352,14 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x17132d);
-    scene.fog = new THREE.Fog(0x2a1f4f, 90, 285);
+    scene.fog = new THREE.Fog(0x2a1f4f, 150, 620);
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(
       70,
       containerRef.current.clientWidth / containerRef.current.clientHeight,
       0.1,
-      600
+      900
     );
     camera.position.set(0, 6, 16);
     camera.lookAt(0, 0, 0);
@@ -342,14 +386,14 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     sun.shadow.mapSize.height = 2048;
     sun.shadow.camera.near = 0.5;
     sun.shadow.camera.far = 300;
-    sun.shadow.camera.left = -120;
-    sun.shadow.camera.right = 120;
-    sun.shadow.camera.top = 120;
-    sun.shadow.camera.bottom = -120;
+    sun.shadow.camera.left = -340;
+    sun.shadow.camera.right = 340;
+    sun.shadow.camera.top = 340;
+    sun.shadow.camera.bottom = -340;
     sun.shadow.bias = -0.0004;
     scene.add(sun);
 
-    const groundGeometry = new THREE.PlaneGeometry(500, 500);
+    const groundGeometry = new THREE.PlaneGeometry(760, 760);
     const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x183a35, roughness: 0.96 });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
@@ -357,6 +401,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     scene.add(ground);
 
     const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x151722, roughness: 0.88, metalness: 0.04 });
+    const dirtMaterial = new THREE.MeshStandardMaterial({ color: 0x72472d, roughness: 1, metalness: 0 });
     const curbWhite = new THREE.MeshStandardMaterial({ color: 0xf5efe5, roughness: 0.72 });
     const curbRed = new THREE.MeshStandardMaterial({ color: 0xe73545, roughness: 0.72 });
     const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xffd166 });
@@ -385,15 +430,23 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
 
     TRACK_POINTS.forEach(([ax, az], index) => {
       const [bx, bz] = TRACK_POINTS[(index + 1) % TRACK_POINTS.length];
+      const ay = TRACK_HEIGHTS[index];
+      const by = TRACK_HEIGHTS[(index + 1) % TRACK_HEIGHTS.length];
       const dx = bx - ax;
       const dz = bz - az;
-      const length = Math.hypot(dx, dz);
+      const dy = by - ay;
+      const horizontalLength = Math.hypot(dx, dz);
+      const length = Math.hypot(horizontalLength, dy);
       const angle = Math.atan2(dx, dz);
+      const pitch = -Math.atan2(dy, horizontalLength);
       const midX = (ax + bx) / 2;
       const midZ = (az + bz) / 2;
-      const road = new THREE.Mesh(new THREE.BoxGeometry(TRACK_WIDTH, 0.12, length + 1.5), roadMaterial);
-      road.position.set(midX, 0.06, midZ);
+      const isDirt = index >= DIRT_SEGMENT_START && index <= DIRT_SEGMENT_END;
+      const road = new THREE.Mesh(new THREE.BoxGeometry(TRACK_WIDTH, 0.18, length + 1.5), isDirt ? dirtMaterial : roadMaterial);
+      road.position.set(midX, (ay + by) / 2 + 0.09, midZ);
+      road.rotation.order = 'YXZ';
       road.rotation.y = angle;
+      road.rotation.x = pitch;
       road.receiveShadow = true;
       scene.add(road);
 
@@ -401,11 +454,11 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       const normalZ = -dx / length;
       for (let distance = 2.5, stripe = 0; distance < length - 2.4; distance += 5, stripe += 1) {
         const t = distance / length;
-        [-1, 1].forEach((side) => {
-          const matrix = new THREE.Matrix4().makeRotationY(angle);
+        if (!isDirt) [-1, 1].forEach((side) => {
+          const matrix = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(pitch, angle, 0, 'YXZ'));
           matrix.setPosition(
             ax + dx * t + normalX * side * (TRACK_WIDTH / 2 - 0.25),
-            0.14,
+            THREE.MathUtils.lerp(ay, by, t) + 0.14,
             az + dz * t + normalZ * side * (TRACK_WIDTH / 2 - 0.25),
           );
           (stripe % 2 === 0 ? whiteCurbMatrices : redCurbMatrices).push(matrix);
@@ -415,8 +468,10 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       for (let distance = 7; distance < length; distance += 14) {
         const t = distance / length;
         const marker = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, 4), markerMaterial);
-        marker.position.set(ax + dx * t, 0.135, az + dz * t);
+        marker.position.set(ax + dx * t, THREE.MathUtils.lerp(ay, by, t) + 0.15, az + dz * t);
+        marker.rotation.order = 'YXZ';
         marker.rotation.y = angle;
+        marker.rotation.x = pitch;
         scene.add(marker);
       }
 
@@ -433,15 +488,17 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
           const railBz = az + dz * railEnd + normalZ * offset;
           const railGroup = new THREE.Group();
           const rail = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.62, railLength), guardRailMaterial);
-          rail.position.set((railAx + railBx) / 2, 0.72, (railAz + railBz) / 2);
+          rail.position.set((railAx + railBx) / 2, (ay + by) / 2 + 0.72, (railAz + railBz) / 2);
+          rail.rotation.order = 'YXZ';
           rail.rotation.y = angle;
+          rail.rotation.x = pitch;
           rail.castShadow = true;
           railGroup.add(rail);
 
           for (let distance = 1; distance < railLength; distance += 5.5) {
             const t = distance / railLength;
             const post = new THREE.Mesh(new THREE.BoxGeometry(0.38, 1.25, 0.38), guardRailPostMaterial);
-            post.position.set(railAx + (railBx - railAx) * t, 0.62, railAz + (railBz - railAz) * t);
+            post.position.set(railAx + (railBx - railAx) * t, THREE.MathUtils.lerp(ay, by, railStart + (railEnd - railStart) * t) + 0.62, railAz + (railBz - railAz) * t);
             post.castShadow = true;
             railGroup.add(post);
           }
@@ -452,6 +509,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
             az: railAz,
             bx: railBx,
             bz: railBz,
+            height: (ay + by) / 2,
             inwardX: -normalX * side,
             inwardZ: -normalZ * side,
             group: railGroup,
@@ -472,9 +530,12 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       scene.add(curbs);
     });
 
-    TRACK_POINTS.forEach(([x, z]) => {
-      const corner = new THREE.Mesh(new THREE.CylinderGeometry(TRACK_WIDTH / 2, TRACK_WIDTH / 2, 0.12, 28), roadMaterial);
-      corner.position.set(x, 0.06, z);
+    TRACK_POINTS.forEach(([x, z], index) => {
+      const corner = new THREE.Mesh(
+        new THREE.CylinderGeometry(TRACK_WIDTH / 2, TRACK_WIDTH / 2, 0.12, 28),
+        index >= DIRT_SEGMENT_START && index <= DIRT_SEGMENT_END ? dirtMaterial : roadMaterial,
+      );
+      corner.position.set(x, TRACK_HEIGHTS[index] + 0.06, z);
       corner.receiveShadow = true;
       scene.add(corner);
     });
@@ -488,7 +549,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         new THREE.BoxGeometry(TRACK_WIDTH / 12, 0.04, 1.5),
         tile % 2 === 0 ? curbWhite : new THREE.MeshStandardMaterial({ color: 0x101116 }),
       );
-      startTile.position.set(TRACK_SPAWN.x + startNormalX * offset, 0.17, TRACK_SPAWN.z + startNormalZ * offset);
+      startTile.position.set(TRACK_SPAWN.x + startNormalX * offset, TRACK_SPAWN.y + 0.17, TRACK_SPAWN.z + startNormalZ * offset);
       startTile.rotation.y = startAngle;
       scene.add(startTile);
     }
@@ -505,7 +566,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       if (index % 2 !== 0) return;
       const [bx, bz] = TRACK_POINTS[(index + 1) % TRACK_POINTS.length];
       const guide = new THREE.Mesh(guideGeometry, guideMaterial);
-      guide.position.set((ax + bx) / 2, 0.185, (az + bz) / 2);
+      guide.position.set((ax + bx) / 2, (TRACK_HEIGHTS[index] + TRACK_HEIGHTS[(index + 1) % TRACK_HEIGHTS.length]) / 2 + 0.185, (az + bz) / 2);
       guide.rotation.x = -Math.PI / 2;
       guide.rotation.z = -Math.atan2(bx - ax, bz - az);
       scene.add(guide);
@@ -520,8 +581,26 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       const normalZ = -(nextX - x) / length;
       [-1, 1].forEach((side) => {
         const pylon = new THREE.Mesh(new THREE.BoxGeometry(0.24, 2.4, 0.24), checkpointMaterial);
-        pylon.position.set(x + normalX * side * (TRACK_WIDTH / 2 + 0.4), 1.2, z + normalZ * side * (TRACK_WIDTH / 2 + 0.4));
+        pylon.position.set(x + normalX * side * (TRACK_WIDTH / 2 + 0.4), TRACK_HEIGHTS[pointIndex] + 1.2, z + normalZ * side * (TRACK_WIDTH / 2 + 0.4));
         scene.add(pylon);
+      });
+    });
+
+    TRACK_POINTS.forEach(([x, z], index) => {
+      const height = TRACK_HEIGHTS[index];
+      if (height < 5 || index % 3 !== 0) return;
+      const [nextX, nextZ] = TRACK_POINTS[(index + 1) % TRACK_POINTS.length];
+      const tangentLength = Math.hypot(nextX - x, nextZ - z) || 1;
+      const normalX = (nextZ - z) / tangentLength;
+      const normalZ = -(nextX - x) / tangentLength;
+      [-1, 1].forEach((side) => {
+        const support = new THREE.Mesh(
+          new THREE.BoxGeometry(2.4, height, 2.4),
+          new THREE.MeshStandardMaterial({ color: 0x485060, roughness: 0.75, metalness: 0.25 }),
+        );
+        support.position.set(x + normalX * side * 6.5, height / 2, z + normalZ * side * 6.5);
+        support.castShadow = true;
+        scene.add(support);
       });
     });
 
@@ -675,6 +754,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     const glassColor = 0x14243a;
     const chromeColor = 0xe5e7eb;
     const redColor = 0xff2222;
+    const yellowColor = 0xfff3b0;
 
     const bodyMat = new THREE.MeshStandardMaterial({ color: mainColor, roughness: 0.3, metalness: 0.62 });
     localPaintMaterialRef.current = bodyMat;
@@ -682,90 +762,89 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     const glassMat = new THREE.MeshStandardMaterial({ color: glassColor, emissive: 0x07101c, emissiveIntensity: 0.45, roughness: 0.12, metalness: 0.32 });
     const chromeMat = new THREE.MeshStandardMaterial({ color: chromeColor, roughness: 0.2, metalness: 0.95 });
     const redMat = new THREE.MeshStandardMaterial({ color: redColor, emissive: redColor, emissiveIntensity: 1.4, roughness: 0.4, metalness: 0.1 });
+    const yellowMat = new THREE.MeshStandardMaterial({ color: yellowColor, emissive: yellowColor, emissiveIntensity: 0.8, roughness: 0.2, metalness: 0.1 });
 
-    const mainBody = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.5, 4.8), bodyMat);
-    mainBody.position.y = 0.5;
+    const mainBody = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.05, 4.2), bodyMat);
+    mainBody.position.y = 1.15;
     mainBody.castShadow = true;
     mainBody.receiveShadow = true;
     car.add(mainBody);
 
-    const hood = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.15, 1.4), bodyMat);
-    hood.position.set(0, 0.78, 1.2);
+    const hood = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.18, 1.3), bodyMat);
+    hood.position.set(0, 1.62, 1.15);
     hood.castShadow = true;
     car.add(hood);
 
-    const trunk = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.15, 1.1), bodyMat);
-    trunk.position.set(0, 0.78, -1.5);
+    const trunk = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.18, 1.0), bodyMat);
+    trunk.position.set(0, 1.62, -1.55);
     trunk.castShadow = true;
     car.add(trunk);
 
-    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.45, 1.7), glassMat);
-    cabin.position.set(0, 1.05, -0.2);
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.65, 1.75), glassMat);
+    cabin.position.set(0, 1.65, -0.15);
     cabin.castShadow = true;
     car.add(cabin);
 
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.14, 1.22), bodyMat);
-    roof.position.set(0, 1.34, -0.25);
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(1.88, 0.14, 1.35), bodyMat);
+    roof.position.set(0, 1.98, -0.15);
     roof.castShadow = true;
     car.add(roof);
 
-    const hoodStripe = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.04, 1.48), darkMat);
-    hoodStripe.position.set(0, 0.875, 1.23);
-    car.add(hoodStripe);
-
-    const windshield = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.5, 0.1), glassMat);
-    windshield.position.set(0, 1.05, 0.7);
-    windshield.rotation.x = -0.5;
+    const windshield = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.55, 0.1), glassMat);
+    windshield.position.set(0, 1.72, 0.72);
+    windshield.rotation.x = -0.35;
     car.add(windshield);
 
-    const rearWindow = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.5, 0.1), glassMat);
-    rearWindow.position.set(0, 1.05, -1.1);
-    rearWindow.rotation.x = 0.5;
+    const rearWindow = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.55, 0.1), glassMat);
+    rearWindow.position.set(0, 1.72, -1.02);
+    rearWindow.rotation.x = 0.35;
     car.add(rearWindow);
 
-    const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, 1.6), glassMat);
-    sideL.position.set(-1.05, 1.05, -0.2);
+    const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.45, 1.5), glassMat);
+    sideL.position.set(-1.05, 1.62, -0.15);
     car.add(sideL);
-    const sideR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, 1.6), glassMat);
-    sideR.position.set(1.05, 1.05, -0.2);
+    const sideR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.45, 1.5), glassMat);
+    sideR.position.set(1.05, 1.62, -0.15);
     car.add(sideR);
 
     [-1, 1].forEach((side) => {
-      const door = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.42, 1.45), bodyMat);
-      door.position.set(side * 1.115, 0.67, -0.2);
+      const door = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.52, 1.45), bodyMat);
+      door.position.set(side * 1.12, 1.05, -0.15);
       door.castShadow = true;
       car.add(door);
       const handle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.32), chromeMat);
-      handle.position.set(side * 1.16, 0.79, -0.48);
+      handle.position.set(side * 1.18, 1.25, -0.48);
       car.add(handle);
     });
 
-    const skirtL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 3.8), darkMat);
-    skirtL.position.set(-1.1, 0.35, 0);
+    const skirtL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.22, 3.6), darkMat);
+    skirtL.position.set(-1.22, 0.72, 0);
     car.add(skirtL);
-    const skirtR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 3.8), darkMat);
-    skirtR.position.set(1.1, 0.35, 0);
+    const skirtR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.22, 3.6), darkMat);
+    skirtR.position.set(1.22, 0.72, 0);
     car.add(skirtR);
 
-    const frontLip = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.1, 0.3), darkMat);
-    frontLip.position.set(0, 0.3, 2.45);
-    car.add(frontLip);
+    const frontBumper = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.35, 0.4), darkMat);
+    frontBumper.position.set(0, 0.55, 2.35);
+    frontBumper.castShadow = true;
+    car.add(frontBumper);
 
-    const rearDiffuser = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.15, 0.4), darkMat);
-    rearDiffuser.position.set(0, 0.25, -2.5);
-    car.add(rearDiffuser);
+    const rearBumper = new THREE.Mesh(new THREE.BoxGeometry(2.45, 0.35, 0.4), darkMat);
+    rearBumper.position.set(0, 0.55, -2.35);
+    rearBumper.castShadow = true;
+    car.add(rearBumper);
 
-    const wheelGeom = new THREE.CylinderGeometry(0.56, 0.56, 0.46, 24);
+    const wheelGeom = new THREE.CylinderGeometry(0.72, 0.72, 0.58, 24);
     const wheelMat = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.9, metalness: 0.02 });
-    const rimGeom = new THREE.CylinderGeometry(0.34, 0.34, 0.49, 10);
+    const rimGeom = new THREE.CylinderGeometry(0.42, 0.42, 0.6, 10);
     const rimMat = new THREE.MeshStandardMaterial({ color: 0xdbe6ef, roughness: 0.16, metalness: 0.95 });
-    const brakeGeom = new THREE.CylinderGeometry(0.22, 0.22, 0.05, 16);
+    const brakeGeom = new THREE.CylinderGeometry(0.26, 0.26, 0.06, 16);
     const brakeMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.6, metalness: 0.4 });
     const wheelPositions = [
-      { x: -1.2, y: 0.5, z: 1.45 },
-      { x: 1.2, y: 0.5, z: 1.45 },
-      { x: -1.2, y: 0.5, z: -1.45 },
-      { x: 1.2, y: 0.5, z: -1.45 },
+      { x: -1.25, y: 0.72, z: 1.5 },
+      { x: 1.25, y: 0.72, z: 1.5 },
+      { x: -1.25, y: 0.72, z: -1.5 },
+      { x: 1.25, y: 0.72, z: -1.5 },
     ];
 
     const wheels: THREE.Mesh[] = [];
@@ -790,53 +869,57 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       car.add(brake);
     });
 
-    const headlightBezel = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.2, 0.15), chromeMat);
-    headlightBezel.position.set(-0.7, 0.5, 2.41);
-    car.add(headlightBezel);
-    const headlightBezelR = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.2, 0.15), chromeMat);
-    headlightBezelR.position.set(0.7, 0.5, 2.41);
-    car.add(headlightBezelR);
+    const grilleSurround = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.55, 0.1), chromeMat);
+    grilleSurround.position.set(0, 0.82, 2.42);
+    car.add(grilleSurround);
 
-    const headlightL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.15, 0.05), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    headlightL.position.set(-0.7, 0.5, 2.5);
+    for (let i = -3; i <= 3; i++) {
+      const slot = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.28, 0.06), darkMat);
+      slot.position.set(i * 0.2, 0.82, 2.48);
+      car.add(slot);
+    }
+
+    const headlightGeom = new THREE.SphereGeometry(0.22, 16, 16);
+    const headlightL = new THREE.Mesh(headlightGeom, yellowMat);
+    headlightL.position.set(-0.65, 0.82, 2.42);
     car.add(headlightL);
-    const headlightR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.15, 0.05), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    headlightR.position.set(0.7, 0.5, 2.5);
+    const headlightR = new THREE.Mesh(headlightGeom, yellowMat);
+    headlightR.position.set(0.65, 0.82, 2.42);
     car.add(headlightR);
 
-    const taillightBezel = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.18, 0.12), chromeMat);
-    taillightBezel.position.set(-0.7, 0.5, -2.45);
+    const headlightBezelGeom = new THREE.CylinderGeometry(0.24, 0.24, 0.08, 16);
+    const headlightBezelL = new THREE.Mesh(headlightBezelGeom, chromeMat);
+    headlightBezelL.rotation.x = Math.PI / 2;
+    headlightBezelL.position.set(-0.65, 0.82, 2.38);
+    car.add(headlightBezelL);
+    const headlightBezelR = new THREE.Mesh(headlightBezelGeom, chromeMat);
+    headlightBezelR.rotation.x = Math.PI / 2;
+    headlightBezelR.position.set(0.65, 0.82, 2.38);
+    car.add(headlightBezelR);
+
+    const taillightBezel = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.22, 0.12), chromeMat);
+    taillightBezel.position.set(-0.7, 0.85, -2.38);
     car.add(taillightBezel);
-    const taillightBezelR = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.18, 0.12), chromeMat);
-    taillightBezelR.position.set(0.7, 0.5, -2.45);
+    const taillightBezelR = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.22, 0.12), chromeMat);
+    taillightBezelR.position.set(0.7, 0.85, -2.38);
     car.add(taillightBezelR);
 
-    const taillightL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.12, 0.05), redMat);
-    taillightL.position.set(-0.7, 0.5, -2.52);
+    const taillightL = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.16, 0.06), redMat);
+    taillightL.position.set(-0.7, 0.85, -2.48);
     car.add(taillightL);
-    const taillightR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.12, 0.05), redMat);
-    taillightR.position.set(0.7, 0.5, -2.52);
+    const taillightR = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.16, 0.06), redMat);
+    taillightR.position.set(0.7, 0.85, -2.48);
     car.add(taillightR);
 
-    const grille = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.15, 0.1), darkMat);
-    grille.position.set(0, 0.45, 2.42);
-    car.add(grille);
-
-    const spoilerStandGeom = new THREE.BoxGeometry(0.12, 0.35, 0.12);
-    const spoilerStandL = new THREE.Mesh(spoilerStandGeom, darkMat);
-    spoilerStandL.position.set(-0.65, 0.85, -2.1);
-    car.add(spoilerStandL);
-    const spoilerStandR = new THREE.Mesh(spoilerStandGeom, darkMat);
-    spoilerStandR.position.set(0.65, 0.85, -2.1);
-    car.add(spoilerStandR);
-
-    const spoiler = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 0.45), darkMat);
-    spoiler.position.set(0, 1.05, -2.1);
-    spoiler.castShadow = true;
-    car.add(spoiler);
+    const rackBarL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 1.5), darkMat);
+    rackBarL.position.set(-0.55, 2.05, -0.15);
+    car.add(rackBarL);
+    const rackBarR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 1.5), darkMat);
+    rackBarR.position.set(0.55, 2.05, -0.15);
+    car.add(rackBarR);
 
     const underglowMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.13 });
-    const underglow = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 4.4), underglowMat);
+    const underglow = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 4.4), underglowMat);
     underglow.rotation.x = -Math.PI / 2;
     underglow.position.y = 0.04;
     car.add(underglow);
@@ -849,13 +932,13 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     car.add(localNameTag);
     localNameTagRef.current = localNameTag;
 
-    car.position.set(TRACK_SPAWN.x, 0, TRACK_SPAWN.z);
+    car.position.set(TRACK_SPAWN.x, TRACK_SPAWN.y, TRACK_SPAWN.z);
     car.rotation.y = TRACK_SPAWN.rotation;
     scene.add(car);
     carRef.current = car;
     carBodyRef.current = {
       velocity: new THREE.Vector3(0, 0, 0),
-      position: new THREE.Vector3(TRACK_SPAWN.x, 0, TRACK_SPAWN.z),
+      position: new THREE.Vector3(TRACK_SPAWN.x, TRACK_SPAWN.y, TRACK_SPAWN.z),
       rotation: TRACK_SPAWN.rotation,
       steer: 0,
     };
@@ -882,16 +965,16 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       keysRef.current.add(e.code);
       if (e.code === 'KeyR') {
         if (carBodyRef.current) {
-          const checkpointIndex = RACE_CHECKPOINT_INDICES[raceProgressRef.current.checkpoint] || 0;
+          const checkpointIndex = RACE_CHECKPOINT_INDICES[lastCheckpointRef.current] || 0;
           const [x, z] = TRACK_POINTS[checkpointIndex];
           const [nextX, nextZ] = TRACK_POINTS[(checkpointIndex + 1) % TRACK_POINTS.length];
           const rotation = Math.atan2(nextX - x, nextZ - z);
-          carBodyRef.current.position.set(x, 0, z);
+          carBodyRef.current.position.set(x, TRACK_HEIGHTS[checkpointIndex], z);
           carBodyRef.current.rotation = rotation;
           carBodyRef.current.velocity.set(0, 0, 0);
           carBodyRef.current.steer = 0;
           if (carRef.current) {
-            carRef.current.position.set(x, 0, z);
+            carRef.current.position.set(x, TRACK_HEIGHTS[checkpointIndex], z);
             carRef.current.rotation.y = rotation;
           }
         }
@@ -962,7 +1045,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     let frameCount = 0;
     let lastSpeed = -1;
     let lastGear = 'N';
-    let lastSurface: 'ASPHALT' | 'OFF ROAD' = 'ASPHALT';
+    let lastSurface: 'ASPHALT' | 'DIRT' | 'OFF ROAD' = 'ASPHALT';
     let previousLongitudinal = 0;
     let activeRaceId = raceStateRef.current.id;
     let checkpointArmed = true;
@@ -1128,9 +1211,10 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         } else {
           const progress = { lap: 1, checkpoint: 0, finishedAt: 0, bestLap: 0, lapStartedAt: currentRace.startAt };
           raceProgressRef.current = progress;
+          lastCheckpointRef.current = 0;
           setRaceProgress(progress);
           const gridSpawn = getGridSpawn(Math.max(0, currentRace.participants.indexOf(clientIdRef.current)));
-          body.position.set(gridSpawn.x, 0, gridSpawn.z);
+          body.position.set(gridSpawn.x, gridSpawn.y, gridSpawn.z);
           body.rotation = gridSpawn.rotation;
           body.velocity.set(0, 0, 0);
           body.steer = 0;
@@ -1175,7 +1259,9 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         }
       }
 
-      const onRoad = isPointOnTrack(body.position.x, body.position.z);
+      const trackContact = nearestTrackPoint(body.position.x, body.position.z, body.position.y);
+      const onRoad = trackContact.distance <= TRACK_WIDTH / 2;
+      const onDirt = onRoad && trackContact.index >= DIRT_SEGMENT_START && trackContact.index <= DIRT_SEGMENT_END;
       const longitudinal = body.velocity.dot(forward);
       let nextLongitudinal = longitudinal;
       let lateral = body.velocity.dot(rightAxis);
@@ -1198,7 +1284,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         nextLongitudinal = Math.sign(nextLongitudinal) * Math.max(0, Math.abs(nextLongitudinal) - handbrakeForce * dt);
       }
 
-      const rollingDrag = onRoad ? 0.32 : 2.4;
+      const rollingDrag = onDirt ? 0.72 : onRoad ? 0.32 : 2.4;
       if (throttleInput === 0 && brakeInput === 0) nextLongitudinal *= Math.exp(-rollingDrag * dt);
       else if (!onRoad) nextLongitudinal *= Math.exp(-1.2 * dt);
       body.velocity.copy(forward).multiplyScalar(nextLongitudinal).addScaledVector(rightAxis, lateral);
@@ -1212,10 +1298,10 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       rightAxis.set(1, 0, 0).applyAxisAngle(upAxis, body.rotation);
       nextLongitudinal = body.velocity.dot(forward);
       lateral = body.velocity.dot(rightAxis);
-      const tireGrip = isDrifting ? 1.35 : onRoad ? 13 : 4.2;
+      const tireGrip = isDrifting ? 1.35 : onDirt ? 6.2 : onRoad ? 13 : 4.2;
       lateral *= Math.exp(-tireGrip * dt);
       if (isDrifting) nextLongitudinal *= Math.exp(-0.42 * dt);
-      const surfaceMaxSpeed = onRoad ? (canBoost ? nitroMaxSpeed : maxSpeed) : 18;
+      const surfaceMaxSpeed = onDirt ? 35 : onRoad ? (canBoost ? nitroMaxSpeed : maxSpeed) : 18;
       nextLongitudinal = THREE.MathUtils.clamp(nextLongitudinal, -reverseSpeed, surfaceMaxSpeed);
       body.velocity.copy(forward).multiplyScalar(nextLongitudinal).addScaledVector(rightAxis, lateral);
 
@@ -1226,16 +1312,23 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       }
 
       body.position.addScaledVector(body.velocity, dt);
-      body.position.y = 0;
+      body.position.y = THREE.MathUtils.lerp(body.position.y, onRoad ? trackContact.height : 0, 1 - Math.exp(-10 * dt));
+
+      if (!spectatorRef.current) {
+        const targetCheckpoint = (lastCheckpointRef.current + 1) % RACE_CHECKPOINT_INDICES.length;
+        const [checkpointX, checkpointZ] = TRACK_POINTS[RACE_CHECKPOINT_INDICES[targetCheckpoint]];
+        const checkpointDistance = Math.hypot(body.position.x - checkpointX, body.position.z - checkpointZ);
+        if (checkpointDistance > TRACK_WIDTH * 1.35) checkpointArmed = true;
+        if (checkpointArmed && checkpointDistance < TRACK_WIDTH * 0.95) {
+          checkpointArmed = false;
+          lastCheckpointRef.current = targetCheckpoint;
+        }
+      }
 
       if (currentRace.phase === 'countdown' && isParticipant && nowMs >= currentRace.startAt && raceProgressRef.current.finishedAt === 0) {
         const progress = raceProgressRef.current;
         const targetCheckpoint = (progress.checkpoint + 1) % RACE_CHECKPOINT_INDICES.length;
-        const [checkpointX, checkpointZ] = TRACK_POINTS[RACE_CHECKPOINT_INDICES[targetCheckpoint]];
-        const checkpointDistance = Math.hypot(body.position.x - checkpointX, body.position.z - checkpointZ);
-        if (checkpointDistance > TRACK_WIDTH) checkpointArmed = true;
-        if (checkpointArmed && checkpointDistance < TRACK_WIDTH * 0.68) {
-          checkpointArmed = false;
+        if (lastCheckpointRef.current === targetCheckpoint) {
           const updated = { ...progress, checkpoint: targetCheckpoint };
           if (targetCheckpoint === 0) {
             const lapDuration = nowMs - progress.lapStartedAt;
@@ -1346,6 +1439,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
           }
           return;
         }
+        if (Math.abs(body.position.y - rail.height) > 2.5) return;
         const dx = rail.bx - rail.ax;
         const dz = rail.bz - rail.az;
         const lengthSquared = dx * dx + dz * dz;
@@ -1374,6 +1468,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       });
 
       remotePlayersRef.current.forEach((remote, id) => {
+        if (Math.abs(remote.group.position.y - body.position.y) > 3) return;
         obstacleVelocity
           .set(0, 0, remote.speed / 3.6)
           .applyAxisAngle(upAxis, remote.group.rotation.y);
@@ -1390,12 +1485,12 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         }
       });
 
-      if (Math.abs(body.position.x) > 160) {
-        body.position.x = THREE.MathUtils.clamp(body.position.x, -160, 160);
+      if (Math.abs(body.position.x) > 350) {
+        body.position.x = THREE.MathUtils.clamp(body.position.x, -350, 350);
         body.velocity.x *= -0.2;
       }
-      if (Math.abs(body.position.z) > 160) {
-        body.position.z = THREE.MathUtils.clamp(body.position.z, -160, 160);
+      if (Math.abs(body.position.z) > 350) {
+        body.position.z = THREE.MathUtils.clamp(body.position.z, -350, 350);
         body.velocity.z *= -0.2;
       }
 
@@ -1437,7 +1532,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
           lastGear = nextGear;
           setGear(nextGear);
         }
-        const nextSurface = onRoad ? 'ASPHALT' : 'OFF ROAD';
+        const nextSurface = onDirt ? 'DIRT' : onRoad ? 'ASPHALT' : 'OFF ROAD';
         if (nextSurface !== lastSurface) {
           lastSurface = nextSurface;
           setSurface(nextSurface);
@@ -1476,7 +1571,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
           if (remoteScore > localScore) position += 1;
         });
         setRacePosition(position);
-        setMapPosition({ x: 50 + (body.position.x / 320) * 100, y: 50 + (body.position.z / 320) * 100, rotation: -THREE.MathUtils.radToDeg(body.rotation) });
+        setMapPosition({ x: 50 + (body.position.x / TRACK_WORLD_SIZE) * 100, y: 50 + (body.position.z / TRACK_WORLD_SIZE) * 100, rotation: -THREE.MathUtils.radToDeg(body.rotation) });
         let nearest: BuildingData | null = null;
         let nearestDist = Infinity;
         buildings.forEach((b) => {
@@ -1612,14 +1707,14 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       let remote = remotePlayersRef.current.get(player.id);
       if (!remote) {
         const { group, paintMaterial, nameTag } = createRemoteCar(player.color, player.name);
-        group.position.set(player.x, 0, player.z);
+        group.position.set(player.x, player.y ?? 0, player.z);
         group.rotation.y = player.rotation;
         scene.add(group);
         remote = {
           group,
           paintMaterial,
           nameTag,
-          targetPosition: new THREE.Vector3(player.x, 0, player.z),
+          targetPosition: new THREE.Vector3(player.x, player.y ?? 0, player.z),
           targetRotation: player.rotation,
           speed: player.speed,
           name: player.name,
@@ -1635,7 +1730,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         remote.paintMaterial.color.setHex(player.color);
         const updateDriver = remote.nameTag.userData.updateDriver as ((name: string, color: number) => void) | undefined;
         updateDriver?.(player.name, player.color);
-        remote.targetPosition.set(player.x, 0, player.z);
+        remote.targetPosition.set(player.x, player.y ?? 0, player.z);
         remote.targetRotation = player.rotation;
         remote.speed = player.speed;
         remote.name = player.name;
@@ -1670,6 +1765,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
           name: playerName,
           color: requestedColor,
           x: body.position.x,
+          y: body.position.y,
           z: body.position.z,
           rotation: body.rotation,
           speed: body.velocity.length() * 3.6,
@@ -1714,7 +1810,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
             setIsReady(localPlayer.ready);
             if (event.race.participants.includes(clientId) && carBodyRef.current) {
               restoredRaceIdRef.current = event.race.id;
-              carBodyRef.current.position.set(localPlayer.x, 0, localPlayer.z);
+              carBodyRef.current.position.set(localPlayer.x, localPlayer.y ?? 0, localPlayer.z);
               carBodyRef.current.rotation = localPlayer.rotation;
               const restoredProgress = {
                 lap: localPlayer.lap,
@@ -1724,6 +1820,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
                 lapStartedAt: Date.now(),
               };
               raceProgressRef.current = restoredProgress;
+              lastCheckpointRef.current = localPlayer.checkpoint;
               setRaceProgress(restoredProgress);
             }
           }
@@ -1775,8 +1872,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       });
       socket.addEventListener('close', () => {
         if (cancelled || !reconnectAllowed) return;
-        setMultiplayerStatus('solo');
-        clearRemotes();
+        setMultiplayerStatus('connecting');
         reconnectTimer = setTimeout(connect, reconnectDelay);
         reconnectDelay = Math.min(reconnectDelay * 2, 30_000);
       });
@@ -1791,6 +1887,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         player: {
           id: clientId,
           x: body.position.x,
+          y: body.position.y,
           z: body.position.z,
           rotation: body.rotation,
           speed: body.velocity.length() * 3.6,
@@ -1819,16 +1916,16 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
 
   const resetCar = useCallback(() => {
     if (carBodyRef.current) {
-      const checkpointIndex = RACE_CHECKPOINT_INDICES[raceProgressRef.current.checkpoint] || 0;
+      const checkpointIndex = RACE_CHECKPOINT_INDICES[lastCheckpointRef.current] || 0;
       const [x, z] = TRACK_POINTS[checkpointIndex];
       const [nextX, nextZ] = TRACK_POINTS[(checkpointIndex + 1) % TRACK_POINTS.length];
       const rotation = Math.atan2(nextX - x, nextZ - z);
-      carBodyRef.current.position.set(x, 0, z);
+      carBodyRef.current.position.set(x, TRACK_HEIGHTS[checkpointIndex], z);
       carBodyRef.current.rotation = rotation;
       carBodyRef.current.velocity.set(0, 0, 0);
       carBodyRef.current.steer = 0;
       if (carRef.current) {
-        carRef.current.position.set(x, 0, z);
+        carRef.current.position.set(x, TRACK_HEIGHTS[checkpointIndex], z);
         carRef.current.rotation.y = rotation;
       }
     }
@@ -1847,6 +1944,9 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     if (!socket || socket.readyState !== WebSocket.OPEN || spectatorRef.current || raceStateRef.current.phase === 'countdown') return;
     readyRef.current = choice;
     setIsReady(choice);
+    setLobbyDrivers((drivers) => drivers.map((driver) => (
+      driver.id === clientIdRef.current ? { ...driver, ready: choice } : driver
+    )));
     socket.send(JSON.stringify({ type: 'ready', ready: choice }));
   }, []);
 
@@ -1909,7 +2009,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       <div className="world-mission">
         <span className="world-mission-kicker">Circuit race</span>
         <strong>{raceState.phase === 'countdown' ? 'Race in progress' : raceState.phase === 'finished' ? 'Race complete' : 'Waiting on the grid'}</strong>
-        <small>Three laps · ten checkpoints · eight drivers</small>
+        <small>Three laps · twelve checkpoints · eight drivers</small>
       </div>
 
       <div className="world-race-strip">
@@ -1921,21 +2021,21 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       {countdown && <div className={`world-countdown${countdown === 'GO!' ? ' is-go' : ''}`}>{countdown}</div>}
       {wrongWay && <div className="world-wrong-way">WRONG WAY</div>}
 
-      {multiplayerStatus === 'online' && raceState.phase !== 'countdown' && (
+      {(multiplayerStatus === 'online' || multiplayerStatus === 'connecting') && lobbyDrivers.length > 0 && raceState.phase !== 'countdown' && (
         <div className="world-ready-card">
           <span>{raceState.phase === 'finished' ? 'NEXT RACE' : 'RACE LOBBY'} · {readyDriverCount}/{lobbyDrivers.length} RACING</span>
           <strong>{isReady === null ? 'CHOOSE YOUR STATUS' : isReady ? 'YOU WILL RACE' : 'YOU WILL WATCH'}</strong>
           <div className="world-ready-actions">
-            <button type="button" className={isReady === true ? 'is-selected' : ''} onClick={() => setRaceChoice(true)}>Ready</button>
-            <button type="button" className={isReady === false ? 'is-selected is-sitting-out' : ''} onClick={() => setRaceChoice(false)}>Not racing</button>
+            <button type="button" disabled={multiplayerStatus !== 'online'} className={isReady === true ? 'is-selected' : ''} onClick={() => setRaceChoice(true)}>Ready</button>
+            <button type="button" disabled={multiplayerStatus !== 'online'} className={isReady === false ? 'is-selected is-sitting-out' : ''} onClick={() => setRaceChoice(false)}>Not racing</button>
           </div>
           <div className="world-lobby-list">
             {lobbyDrivers.map((driver) => (
               <div key={driver.id}><i style={{ backgroundColor: `#${driver.color.toString(16).padStart(6, '0')}` }} /><b>{driver.name}</b><em>{driver.ready === null ? 'DECIDING' : driver.ready ? 'READY' : 'SITTING OUT'}</em></div>
             ))}
           </div>
-          <button type="button" className="world-start-race" disabled={!allChoicesSet || readyDriverCount === 0} onClick={startRace}>
-            {!allChoicesSet ? 'Waiting for decisions' : readyDriverCount === 0 ? 'No racers ready' : 'Start race'}
+          <button type="button" className="world-start-race" disabled={multiplayerStatus !== 'online' || !allChoicesSet || readyDriverCount === 0} onClick={startRace}>
+            {multiplayerStatus !== 'online' ? 'Reconnecting…' : !allChoicesSet ? 'Waiting for decisions' : readyDriverCount === 0 ? 'No racers ready' : 'Start race'}
           </button>
         </div>
       )}
@@ -1983,7 +2083,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
             <div><strong>Space</strong><span>Handbrake drift</span></div>
             <div><strong>Shift</strong><span>Nitro boost</span></div>
             <div><strong>A / D</strong><span>Steer</span></div>
-            <div><strong>R</strong><span>Reset car</span></div>
+            <div><strong>R</strong><span>Return to last checkpoint</span></div>
             <div><strong>E</strong><span>Inspect highlighted stop</span></div>
             <div><strong>Left stick</strong><span>Drive</span></div>
           </div>
@@ -1996,9 +2096,9 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
           <div className="world-panel-heading"><span>Navigation</span><strong>Circuit map</strong></div>
           <div className="world-map">
             <svg className="world-map-track" viewBox="0 0 100 100" aria-hidden="true">
-              <polyline className="world-map-track-outline" points={`${TRACK_POINTS.map(([x, z]) => `${50 + (x / 320) * 100},${50 + (z / 320) * 100}`).join(' ')} 50,${50 + (TRACK_POINTS[0][1] / 320) * 100}`} />
-              <polyline className="world-map-track-road" points={`${TRACK_POINTS.map(([x, z]) => `${50 + (x / 320) * 100},${50 + (z / 320) * 100}`).join(' ')} 50,${50 + (TRACK_POINTS[0][1] / 320) * 100}`} />
-              <polyline className="world-map-track-line" points={`${TRACK_POINTS.map(([x, z]) => `${50 + (x / 320) * 100},${50 + (z / 320) * 100}`).join(' ')} 50,${50 + (TRACK_POINTS[0][1] / 320) * 100}`} />
+              <polyline className="world-map-track-outline" points={`${TRACK_POINTS.map(([x, z]) => `${50 + (x / TRACK_WORLD_SIZE) * 100},${50 + (z / TRACK_WORLD_SIZE) * 100}`).join(' ')} 50,${50 + (TRACK_POINTS[0][1] / TRACK_WORLD_SIZE) * 100}`} />
+              <polyline className="world-map-track-road" points={`${TRACK_POINTS.map(([x, z]) => `${50 + (x / TRACK_WORLD_SIZE) * 100},${50 + (z / TRACK_WORLD_SIZE) * 100}`).join(' ')} 50,${50 + (TRACK_POINTS[0][1] / TRACK_WORLD_SIZE) * 100}`} />
+              <polyline className="world-map-track-line" points={`${TRACK_POINTS.map(([x, z]) => `${50 + (x / TRACK_WORLD_SIZE) * 100},${50 + (z / TRACK_WORLD_SIZE) * 100}`).join(' ')} 50,${50 + (TRACK_POINTS[0][1] / TRACK_WORLD_SIZE) * 100}`} />
             </svg>
             <div className="world-map-player" style={{ left: `${mapPosition.x}%`, top: `${mapPosition.y}%`, transform: `translate(-50%, -50%) rotate(${mapPosition.rotation}deg)`, backgroundColor: `#${playerColor.toString(16).padStart(6, '0')}` }} />
             {opponents.map((opponent) => (
@@ -2006,11 +2106,11 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
                 key={opponent.id}
                 className="world-map-opponent"
                 title={opponent.name}
-                style={{ left: `${50 + (opponent.x / 320) * 100}%`, top: `${50 + (opponent.z / 320) * 100}%`, backgroundColor: `#${opponent.color.toString(16).padStart(6, '0')}` }}
+                style={{ left: `${50 + (opponent.x / TRACK_WORLD_SIZE) * 100}%`, top: `${50 + (opponent.z / TRACK_WORLD_SIZE) * 100}%`, backgroundColor: `#${opponent.color.toString(16).padStart(6, '0')}` }}
               />
             ))}
             {buildingsRef.current.map((b, i) => (
-              <div key={i} className={`world-map-building${b.type ? ` world-map-building-${b.type}` : ''}`} style={{ left: `${50 + (b.x / 320) * 100}%`, top: `${50 + (b.z / 320) * 100}%` }} />
+              <div key={i} className={`world-map-building${b.type ? ` world-map-building-${b.type}` : ''}`} style={{ left: `${50 + (b.x / TRACK_WORLD_SIZE) * 100}%`, top: `${50 + (b.z / TRACK_WORLD_SIZE) * 100}%` }} />
             ))}
           </div>
           <button onClick={() => setShowMap(false)} className="world-panel-close">Close map</button>
