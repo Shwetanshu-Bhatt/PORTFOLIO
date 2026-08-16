@@ -256,7 +256,8 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
   const restoredRaceIdRef = useRef('');
   const raceProgressRef = useRef<RaceProgress>({ lap: 1, checkpoint: 0, finishedAt: 0, bestLap: 0, lapStartedAt: 0 });
   const spectatorRef = useRef(false);
-  const readyRef = useRef(false);
+  const roomSpectatorRef = useRef(false);
+  const readyRef = useRef<boolean | null>(null);
   const carBodyRef = useRef<{
     velocity: THREE.Vector3;
     position: THREE.Vector3;
@@ -282,10 +283,11 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
   const [raceState, setRaceState] = useState<WorldRaceState>(raceStateRef.current);
   const [raceProgress, setRaceProgress] = useState<RaceProgress>(raceProgressRef.current);
   const [racePosition, setRacePosition] = useState(1);
-  const [isReady, setIsReady] = useState(false);
+  const [isReady, setIsReady] = useState<boolean | null>(null);
+  const [lobbyDrivers, setLobbyDrivers] = useState<Array<{ id: string; name: string; color: number; ready: boolean | null }>>([]);
   const [wrongWay, setWrongWay] = useState(false);
   const [countdown, setCountdown] = useState('');
-  const [opponents, setOpponents] = useState<Array<{ id: string; name: string; color: number; x: number; z: number }>>([]);
+  const [opponents, setOpponents] = useState<Array<{ id: string; name: string; color: number; x: number; z: number; lap: number; checkpoint: number; finishedAt: number; bestLap: number }>>([]);
   const [nitro, setNitro] = useState(100);
   const [nearbyBuilding, setNearbyBuilding] = useState<BuildingData | null>(null);
   const [activeBuilding, setActiveBuilding] = useState<BuildingData | null>(null);
@@ -1592,13 +1594,17 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         materials.forEach((material) => material.dispose());
       });
       remotePlayersRef.current.delete(id);
-      setOpponents(Array.from(remotePlayersRef.current, ([remoteId, visual]) => ({ id: remoteId, name: visual.name, color: visual.color, x: visual.targetPosition.x, z: visual.targetPosition.z })));
+      setOpponents(Array.from(remotePlayersRef.current, ([remoteId, visual]) => ({
+        id: remoteId, name: visual.name, color: visual.color, x: visual.targetPosition.x, z: visual.targetPosition.z,
+        lap: visual.lap, checkpoint: visual.checkpoint, finishedAt: visual.finishedAt, bestLap: visual.bestLap,
+      })));
     };
 
     const clearRemotes = () => {
       Array.from(remotePlayersRef.current.keys()).forEach(removeRemote);
       setPlayerCount(1);
       setOpponents([]);
+      setLobbyDrivers([]);
     };
 
     const upsertRemote = (player: WorldPlayerState) => {
@@ -1646,6 +1652,10 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         color: visual.color,
         x: visual.targetPosition.x,
         z: visual.targetPosition.z,
+        lap: visual.lap,
+        checkpoint: visual.checkpoint,
+        finishedAt: visual.finishedAt,
+        bestLap: visual.bestLap,
       })));
       setPlayerCount(Math.min(WORLD_MAX_PLAYERS, remotePlayersRef.current.size + 1));
     };
@@ -1664,7 +1674,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
           rotation: body.rotation,
           speed: body.velocity.length() * 3.6,
           steer: body.steer,
-          ready: false,
+          ready: null,
           lap: 1,
           checkpoint: 0,
           finishedAt: 0,
@@ -1691,8 +1701,12 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
           clearRemotes();
           raceStateRef.current = event.race;
           setRaceState(event.race);
-          spectatorRef.current = Boolean(event.spectator);
-          if (carRef.current) carRef.current.visible = !event.spectator;
+          roomSpectatorRef.current = Boolean(event.spectator);
+          const shouldSpectate = Boolean(event.spectator)
+            || (event.race.phase === 'countdown' && !event.race.participants.includes(clientId));
+          spectatorRef.current = shouldSpectate;
+          setLobbyDrivers(event.players.map((player) => ({ id: player.id, name: player.name, color: player.color, ready: player.ready })));
+          if (carRef.current) carRef.current.visible = !shouldSpectate;
           const localPlayer = event.players.find((player) => player.id === clientId);
           if (localPlayer) {
             applyLocalColor(localPlayer.color, localPlayer.name);
@@ -1715,8 +1729,14 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
           }
           event.players.forEach(upsertRemote);
           setPlayerCount(Math.max(1, Math.min(event.maxPlayers, event.players.length)));
-          setMultiplayerStatus(event.spectator ? 'spectating' : 'online');
+          setMultiplayerStatus(shouldSpectate ? 'spectating' : 'online');
         } else if (event.type === 'player') {
+          setLobbyDrivers((drivers) => {
+            const nextDriver = { id: event.player.id, name: event.player.name, color: event.player.color, ready: event.player.ready };
+            return drivers.some((driver) => driver.id === event.player.id)
+              ? drivers.map((driver) => driver.id === event.player.id ? nextDriver : driver)
+              : [...drivers, nextDriver];
+          });
           if (event.player.id === clientId) {
             applyLocalColor(event.player.color, event.player.name);
             readyRef.current = event.player.ready;
@@ -1726,8 +1746,14 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         } else if (event.type === 'race') {
           raceStateRef.current = event.race;
           setRaceState(event.race);
+          const shouldSpectate = roomSpectatorRef.current
+            || (event.race.phase === 'countdown' && !event.race.participants.includes(clientId));
+          spectatorRef.current = shouldSpectate;
+          if (carRef.current) carRef.current.visible = !shouldSpectate;
+          setMultiplayerStatus(shouldSpectate ? 'spectating' : 'online');
         } else if (event.type === 'leave') {
           removeRemote(event.id);
+          setLobbyDrivers((drivers) => drivers.filter((driver) => driver.id !== event.id));
           setPlayerCount(remotePlayersRef.current.size + 1);
         } else if (event.type === 'rail_break') {
           const rail = guardRailCollidersRef.current.find((candidate) => candidate.id === event.railId);
@@ -1816,15 +1842,39 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     }
   }, []);
 
-  const toggleReady = useCallback(() => {
+  const setRaceChoice = useCallback((choice: boolean) => {
     const socket = multiplayerSocketRef.current;
-    if (!socket || socket.readyState !== WebSocket.OPEN || spectatorRef.current
-      || (raceStateRef.current.phase === 'countdown' && Date.now() >= raceStateRef.current.startAt - 1_000)) return;
-    const nextReady = !readyRef.current;
-    readyRef.current = nextReady;
-    setIsReady(nextReady);
-    socket.send(JSON.stringify({ type: 'ready', ready: nextReady }));
+    if (!socket || socket.readyState !== WebSocket.OPEN || spectatorRef.current || raceStateRef.current.phase === 'countdown') return;
+    readyRef.current = choice;
+    setIsReady(choice);
+    socket.send(JSON.stringify({ type: 'ready', ready: choice }));
   }, []);
+
+  const startRace = useCallback(() => {
+    const socket = multiplayerSocketRef.current;
+    if (!socket || socket.readyState !== WebSocket.OPEN || spectatorRef.current || raceStateRef.current.phase === 'countdown') return;
+    socket.send(JSON.stringify({ type: 'start_race' }));
+  }, []);
+
+  const allChoicesSet = lobbyDrivers.length > 0 && lobbyDrivers.every((driver) => driver.ready !== null);
+  const readyDriverCount = lobbyDrivers.filter((driver) => driver.ready === true).length;
+  const standings = [
+    ...(raceState.participants.includes(clientIdRef.current) ? [{
+      id: clientIdRef.current,
+      name: playerName,
+      color: playerColor,
+      lap: raceProgress.lap,
+      checkpoint: raceProgress.checkpoint,
+      finishedAt: raceProgress.finishedAt,
+      bestLap: raceProgress.bestLap,
+    }] : []),
+    ...opponents.filter((opponent) => raceState.participants.includes(opponent.id)),
+  ].sort((a, b) => {
+    if (a.finishedAt && b.finishedAt) return a.finishedAt - b.finishedAt;
+    if (a.finishedAt) return -1;
+    if (b.finishedAt) return 1;
+    return (b.lap * 100 + b.checkpoint) - (a.lap * 100 + a.checkpoint);
+  });
 
   return (
     <div className="world-shell">
@@ -1871,17 +1921,39 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       {countdown && <div className={`world-countdown${countdown === 'GO!' ? ' is-go' : ''}`}>{countdown}</div>}
       {wrongWay && <div className="world-wrong-way">WRONG WAY</div>}
 
-      {multiplayerStatus === 'online' && (raceState.phase !== 'countdown'
-        || (!raceState.participants.includes(clientIdRef.current) && Date.now() < raceState.startAt - 1_000)) && (
+      {multiplayerStatus === 'online' && raceState.phase !== 'countdown' && (
         <div className="world-ready-card">
-          <span>{raceState.phase === 'countdown' ? 'STARTING SOON' : raceState.phase === 'finished' ? 'NEXT RACE' : 'RACE LOBBY'}</span>
-          <strong>{isReady ? 'READY' : raceState.phase === 'countdown' ? 'LATE ENTRY' : 'JOIN THE GRID'}</strong>
-          <button type="button" onClick={toggleReady}>{isReady ? 'Cancel ready' : 'Ready up'}</button>
+          <span>{raceState.phase === 'finished' ? 'NEXT RACE' : 'RACE LOBBY'} · {readyDriverCount}/{lobbyDrivers.length} RACING</span>
+          <strong>{isReady === null ? 'CHOOSE YOUR STATUS' : isReady ? 'YOU WILL RACE' : 'YOU WILL WATCH'}</strong>
+          <div className="world-ready-actions">
+            <button type="button" className={isReady === true ? 'is-selected' : ''} onClick={() => setRaceChoice(true)}>Ready</button>
+            <button type="button" className={isReady === false ? 'is-selected is-sitting-out' : ''} onClick={() => setRaceChoice(false)}>Not racing</button>
+          </div>
+          <div className="world-lobby-list">
+            {lobbyDrivers.map((driver) => (
+              <div key={driver.id}><i style={{ backgroundColor: `#${driver.color.toString(16).padStart(6, '0')}` }} /><b>{driver.name}</b><em>{driver.ready === null ? 'DECIDING' : driver.ready ? 'READY' : 'SITTING OUT'}</em></div>
+            ))}
+          </div>
+          <button type="button" className="world-start-race" disabled={!allChoicesSet || readyDriverCount === 0} onClick={startRace}>
+            {!allChoicesSet ? 'Waiting for decisions' : readyDriverCount === 0 ? 'No racers ready' : 'Start race'}
+          </button>
         </div>
       )}
 
       {(multiplayerStatus === 'spectating' || raceProgress.finishedAt > 0) && (
         <div className="world-spectator-banner">SPECTATING · {opponents[0]?.name || 'WAITING FOR DRIVER'}</div>
+      )}
+
+      {raceState.phase === 'countdown' && standings.length > 0 && (
+        <div className="world-standings">
+          <span>LIVE STANDINGS</span>
+          {standings.map((driver, index) => (
+            <div key={driver.id} className={driver.id === clientIdRef.current ? 'is-you' : ''}>
+              <b>{index + 1}</b><i style={{ backgroundColor: `#${driver.color.toString(16).padStart(6, '0')}` }} /><strong>{driver.name}</strong>
+              <em>{driver.finishedAt ? formatRaceTime(driver.finishedAt) : `L${driver.lap} · CP${driver.checkpoint + 1}`}</em>
+            </div>
+          ))}
+        </div>
       )}
 
       {raceState.phase === 'finished' && raceState.results.length > 0 && (

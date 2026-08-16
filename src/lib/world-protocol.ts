@@ -21,7 +21,7 @@ export interface WorldPlayerState {
   rotation: number;
   speed: number;
   steer: number;
-  ready: boolean;
+  ready: boolean | null;
   lap: number;
   checkpoint: number;
   finishedAt: number;
@@ -52,7 +52,8 @@ export type WorldClientEvent =
   | { type: 'state'; player: Omit<WorldPlayerState, 'name' | 'color' | 'updatedAt'> }
   | { type: 'collision'; targetId: string; impulseX: number; impulseZ: number }
   | { type: 'rail_break'; railId: number }
-  | { type: 'ready'; ready: boolean };
+  | { type: 'ready'; ready: boolean }
+  | { type: 'start_race' };
 
 export type WorldServerEvent =
   | { type: 'snapshot'; players: WorldPlayerState[]; maxPlayers: number; race: WorldRaceState; spectator?: boolean }
