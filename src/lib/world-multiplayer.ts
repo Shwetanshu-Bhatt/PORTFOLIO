@@ -249,15 +249,23 @@ async function handleMessage(ws: WebSocket, data: RawData) {
     const existing = typeof stored === 'string' ? JSON.parse(stored) as WorldPlayerState : stored;
     if (!existing) return;
     const race = await getRace(redis);
-    if (race.phase === 'countdown') return;
+    if (race.phase === 'countdown' && (!event.ready || Date.now() >= race.startAt - 1_000)) return;
     const player = normalizePlayer({ ...existing, ready: event.ready });
     await redis.hset(PLAYERS_KEY, { [player.id]: player });
     await publish(redis, { type: 'player', player });
+    if (race.phase === 'countdown') {
+      if (!race.participants.includes(player.id)) {
+        const updatedRace = { ...race, participants: [...race.participants, player.id] };
+        await redis.set(RACE_KEY, updatedRace);
+        await publish(redis, { type: 'race', race: updatedRace });
+      }
+      return;
+    }
     if (!event.ready) return;
     const players = await getPlayers(redis);
-    if (players.length === 0 || !players.every((candidate) => candidate.ready)) return;
-    const participants = players.map((candidate) => candidate.id);
-    for (const candidate of players) {
+    const participants = players.filter((candidate) => candidate.ready).map((candidate) => candidate.id);
+    if (participants.length === 0) return;
+    for (const candidate of players.filter((entry) => participants.includes(entry.id))) {
       const resetPlayer = normalizePlayer({ ...candidate, ready: false, lap: 1, checkpoint: 0, finishedAt: 0, bestLap: 0 });
       await redis.hset(PLAYERS_KEY, { [candidate.id]: resetPlayer });
       await publish(redis, { type: 'player', player: resetPlayer });
@@ -265,7 +273,7 @@ async function handleMessage(ws: WebSocket, data: RawData) {
     const nextRace: WorldRaceState = {
       id: `${Date.now()}`,
       phase: 'countdown',
-      startAt: Date.now() + 4_000,
+      startAt: Date.now() + 6_000,
       participants,
       totalLaps: WORLD_TOTAL_LAPS,
       results: [],

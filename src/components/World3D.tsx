@@ -970,11 +970,15 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     let skidCursor = 0;
     let sparkCursor = 0;
     let cameraShake = 0;
-    let audioContext: AudioContext | null = null;
-    let engineOscillator: OscillatorNode | null = null;
-    let engineGain: GainNode | null = null;
-    let tireOscillator: OscillatorNode | null = null;
-    let tireGain: GainNode | null = null;
+    let audioStarted = false;
+    const idleEngineAudio = new Audio('/audio/engine-idle.wav');
+    const highEngineAudio = new Audio('/audio/engine-high.wav');
+    idleEngineAudio.loop = true;
+    highEngineAudio.loop = true;
+    idleEngineAudio.preload = 'auto';
+    highEngineAudio.preload = 'auto';
+    idleEngineAudio.volume = 0;
+    highEngineAudio.volume = 0;
     const smokeOffset = new THREE.Vector3();
     const collisionNormal = new THREE.Vector3();
     const collisionTangent = new THREE.Vector3();
@@ -1009,24 +1013,10 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     });
 
     const startAudio = () => {
-      if (audioContext) {
-        void audioContext.resume();
-        return;
-      }
-      audioContext = new AudioContext();
-      engineOscillator = audioContext.createOscillator();
-      engineGain = audioContext.createGain();
-      engineOscillator.type = 'sawtooth';
-      engineGain.gain.value = 0.012;
-      engineOscillator.connect(engineGain).connect(audioContext.destination);
-      engineOscillator.start();
-      tireOscillator = audioContext.createOscillator();
-      tireGain = audioContext.createGain();
-      tireOscillator.type = 'square';
-      tireOscillator.frequency.value = 95;
-      tireGain.gain.value = 0;
-      tireOscillator.connect(tireGain).connect(audioContext.destination);
-      tireOscillator.start();
+      if (audioStarted) return;
+      audioStarted = true;
+      void idleEngineAudio.play();
+      void highEngineAudio.play();
     };
     window.addEventListener('keydown', startAudio, { once: true });
     window.addEventListener('pointerdown', startAudio, { once: true });
@@ -1039,17 +1029,6 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         (spark.userData.velocity as THREE.Vector3).set((Math.random() - 0.5) * strength, 2 + Math.random() * 3, (Math.random() - 0.5) * strength);
         spark.userData.life = 0.35 + Math.random() * 0.3;
         spark.visible = true;
-      }
-      if (audioContext) {
-        const oscillator = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-        oscillator.type = 'square';
-        oscillator.frequency.setValueAtTime(90 + strength * 4, audioContext.currentTime);
-        gain.gain.setValueAtTime(Math.min(0.16, strength / 120), audioContext.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.16);
-        oscillator.connect(gain).connect(audioContext.destination);
-        oscillator.start();
-        oscillator.stop(audioContext.currentTime + 0.17);
       }
     };
 
@@ -1315,11 +1294,13 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         if (spark.position.y < 0.12 || spark.userData.life <= 0) spark.visible = false;
       });
 
-      if (audioContext && engineOscillator && engineGain && tireGain) {
-        const audioNow = audioContext.currentTime;
-        engineOscillator.frequency.setTargetAtTime(55 + Math.abs(nextLongitudinal) * 7.5, audioNow, 0.04);
-        engineGain.gain.setTargetAtTime(isRaceLocked ? 0.006 : 0.012 + Math.abs(nextLongitudinal) / 2_800, audioNow, 0.08);
-        tireGain.gain.setTargetAtTime(isDrifting ? Math.min(0.055, Math.abs(lateral) / 220 + 0.018) : 0, audioNow, 0.05);
+      if (audioStarted) {
+        const rpmRatio = THREE.MathUtils.clamp(Math.abs(nextLongitudinal) / maxSpeed, 0, 1);
+        idleEngineAudio.playbackRate = 0.88 + rpmRatio * 0.2;
+        highEngineAudio.playbackRate = 0.72 + rpmRatio * 0.68;
+        const masterVolume = isRaceLocked ? 0.45 : 1;
+        idleEngineAudio.volume = THREE.MathUtils.clamp((0.026 - rpmRatio * 0.018) * masterVolume, 0, 0.026);
+        highEngineAudio.volume = THREE.MathUtils.clamp((rpmRatio - 0.12) * 0.042 * masterVolume, 0, 0.038);
       }
 
       buildings.forEach((b) => {
@@ -1568,9 +1549,8 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       sparkMaterial.dispose();
       window.removeEventListener('keydown', startAudio);
       window.removeEventListener('pointerdown', startAudio);
-      engineOscillator?.stop();
-      tireOscillator?.stop();
-      void audioContext?.close();
+      idleEngineAudio.pause();
+      highEngineAudio.pause();
     };
   }, []);
 
@@ -1838,7 +1818,8 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
 
   const toggleReady = useCallback(() => {
     const socket = multiplayerSocketRef.current;
-    if (!socket || socket.readyState !== WebSocket.OPEN || spectatorRef.current || raceStateRef.current.phase === 'countdown') return;
+    if (!socket || socket.readyState !== WebSocket.OPEN || spectatorRef.current
+      || (raceStateRef.current.phase === 'countdown' && Date.now() >= raceStateRef.current.startAt - 1_000)) return;
     const nextReady = !readyRef.current;
     readyRef.current = nextReady;
     setIsReady(nextReady);
@@ -1890,10 +1871,11 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       {countdown && <div className={`world-countdown${countdown === 'GO!' ? ' is-go' : ''}`}>{countdown}</div>}
       {wrongWay && <div className="world-wrong-way">WRONG WAY</div>}
 
-      {multiplayerStatus === 'online' && raceState.phase !== 'countdown' && (
+      {multiplayerStatus === 'online' && (raceState.phase !== 'countdown'
+        || (!raceState.participants.includes(clientIdRef.current) && Date.now() < raceState.startAt - 1_000)) && (
         <div className="world-ready-card">
-          <span>{raceState.phase === 'finished' ? 'NEXT RACE' : 'RACE LOBBY'}</span>
-          <strong>{isReady ? 'READY' : 'JOIN THE GRID'}</strong>
+          <span>{raceState.phase === 'countdown' ? 'STARTING SOON' : raceState.phase === 'finished' ? 'NEXT RACE' : 'RACE LOBBY'}</span>
+          <strong>{isReady ? 'READY' : raceState.phase === 'countdown' ? 'LATE ENTRY' : 'JOIN THE GRID'}</strong>
           <button type="button" onClick={toggleReady}>{isReady ? 'Cancel ready' : 'Ready up'}</button>
         </div>
       )}
