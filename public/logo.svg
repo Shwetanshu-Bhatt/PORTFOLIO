@@ -1,0 +1,55 @@
+
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 1024 1024"
+     role="img"
+     aria-labelledby="title desc">
+  <title id="title">Shwetanshu Bhatt SB Monogram</title>
+  <desc id="desc">A boxy, chunky geometric SB monogram on a black background.</desc>
+
+  <rect width="1024" height="1024" fill="#000000"/>
+
+  <g fill="#FFFFFF" transform="translate(132 225) scale(1.1)">
+    <!-- S -->
+    <path d="
+      M 58 0
+      L 1 56
+      L 0 232
+      L 50 278
+      L 247 331
+      L 250 415
+      L 0 417
+      L 1 521
+      L 293 521
+      L 360 455
+      L 361 273
+      L 326 236
+      L 117 180
+      L 115 106
+      L 349 103
+      L 349 0
+      Z" />
+
+    <!-- B -->
+    <path d="
+      M 387 0
+      L 387 102
+      L 576 107
+      L 570 201
+      L 358 201
+      L 401 259
+      L 401 310
+      L 572 311
+      L 576 412
+      L 401 417
+      L 401 463
+      L 343 521
+      L 630 521
+      L 690 463
+      L 690 296
+      L 646 256
+      L 684 216
+      L 684 57
+      L 623 -1
+      Z" />
+  </g>
+</svg>

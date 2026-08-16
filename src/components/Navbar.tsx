@@ -13,7 +13,7 @@ const baseLinks = [
 function Brand() {
   return (
     <a className="nav-brand" href="#hero" aria-label="Back to the top">
-      <span className="nav-brand-mark">S</span>
+      <img className="nav-brand-mark" src="/logo.svg" alt="SB monogram" />
       <span className="nav-brand-name">SB / 26</span>
     </a>
   );

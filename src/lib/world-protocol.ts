@@ -2,14 +2,14 @@ export const WORLD_MAX_PLAYERS = 8;
 export const WORLD_STATE_INTERVAL_MS = 80;
 export const WORLD_TOTAL_LAPS = 3;
 export const WORLD_PLAYER_COLORS = [
-  0x2f80ed,
-  0xff4d4d,
-  0x2ed573,
-  0xffa502,
-  0xa55eea,
-  0x00d2d3,
-  0xff6bcb,
-  0xf1f2f6,
+  0xc62828,
+  0x1565c0,
+  0x2e7d32,
+  0xf9a825,
+  0x6a1b9a,
+  0xef6c00,
+  0x00838f,
+  0xe0e0e0,
 ] as const;
 
 export interface WorldPlayerState {
