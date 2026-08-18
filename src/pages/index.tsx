@@ -1,4 +1,5 @@
 import Head from "next/head";
+import Script from "next/script";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
@@ -28,7 +29,6 @@ export default function Home() {
         <meta name="keywords" content="freelance developer Dehradun, web developer Dehradun, backend developer Dehradun, full stack developer Dehradun, AI developer Dehradun, software developer Uttarakhand" />
         <meta name="author" content="Shwetanshu Bhatt" />
         <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
-        <meta name="impact-site-verification" content="697ba342-725c-49c3-84b9-7a394c34a897" />
         <meta name="geo.region" content="IN-UK" />
         <meta name="geo.placename" content="Dehradun" />
         <meta property="og:type" content="website" />
@@ -61,6 +61,9 @@ export default function Home() {
         </main>
         <Footer />
       </div>
+      <Script id="impact-stat" strategy="afterInteractive">
+        {`(function(i,m,p,a,c,t){c.ire_o=p;c[p]=c[p]||function(){(c[p].a=c[p].a||[]).push(arguments)};t=a.createElement(m);var z=a.getElementsByTagName(m)[0];t.async=1;t.src=i;z.parentNode.insertBefore(t,z)})('https://utt.impactcdn.com/P-A7637812-d15c-4168-a107-cc9ef11cd5bc1.js','script','impactStat',document,window);impactStat('transformLinks');impactStat('trackImpression');`}
+      </Script>
     </>
   );
 }
