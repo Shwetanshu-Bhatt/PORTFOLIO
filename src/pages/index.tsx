@@ -22,6 +22,7 @@ export default function Home() {
 
   return (
     <>
+      <span style={{ position: "absolute", width: "1px", height: "1px", padding: 0, margin: "-1px", overflow: "hidden", opacity: 0, whiteSpace: "nowrap", border: 0 }}>Impact-Site-Verification: 697ba342-725c-49c3-84b9-7a394c34a897</span>
       <Head>
         <title>Freelance Developer in Dehradun | Shwetanshu Bhatt</title>
         <meta name="description" content="Freelance software developer in Dehradun building responsive websites, backend APIs, PostgreSQL systems, automation, and practical AI integrations." />

@@ -33,7 +33,6 @@ export default function Hero() {
 
   return (
     <section className="site-section hero-section hero-experience" id="hero">
-      <span style={{ position: "absolute", width: "1px", height: "1px", padding: 0, margin: "-1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}>Impact-Site-Verification: 697ba342-725c-49c3-84b9-7a394c34a897</span>
       <div className="hero-topline" aria-hidden="true">
         <span>Field notes / 001</span>
         <span className="hero-topline-center"><i /> System online</span>
