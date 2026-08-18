@@ -28,7 +28,7 @@ export default function Home() {
         <meta name="keywords" content="freelance developer Dehradun, web developer Dehradun, backend developer Dehradun, full stack developer Dehradun, AI developer Dehradun, software developer Uttarakhand" />
         <meta name="author" content="Shwetanshu Bhatt" />
         <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
-        <meta name="impact-site-verification" value="697ba342-725c-49c3-84b9-7a394c34a897" />
+        <meta name="impact-site-verification" content="697ba342-725c-49c3-84b9-7a394c34a897" />
         <meta name="geo.region" content="IN-UK" />
         <meta name="geo.placename" content="Dehradun" />
         <meta property="og:type" content="website" />
