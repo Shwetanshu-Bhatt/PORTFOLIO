@@ -1,9 +1,13 @@
 import Image from 'next/image';
-import { projects } from '@/data';
+import { projects as staticProjects, type Project } from '@/data';
 
-export default function Projects() {
-  const featured = projects.projects.find(project => project.featured) || projects.projects[0];
-  const rest = projects.projects.filter(project => project.id !== featured.id);
+export default function Projects({ projects = staticProjects.projects }: { projects?: Project[] }) {
+  const featured = projects.find(project => project.featured) || projects[0];
+  const rest = featured ? projects.filter(project => project.id !== featured.id) : [];
+
+  if (!featured) {
+    return <section className="site-section" id="projects"><div className="section-inner"><div className="projects-heading"><div><div className="section-mark">Selected work</div><h2 className="section-heading">Things <em>shipped.</em></h2></div><p className="projects-intro">Projects will appear here as soon as they are published from the content studio.</p></div></div></section>;
+  }
 
   return (
     <section className="site-section" id="projects">

@@ -9,8 +9,11 @@ import Projects from "@/components/Projects";
 import Reviews from "@/components/Reviews";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
+import type { GetServerSideProps } from 'next';
+import type { Project } from '@/data';
+import { loadPortfolioData } from '@/lib/portfolio-content';
 
-export default function Home() {
+export default function Home({ projects }: { projects: Project[] }) {
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -55,7 +58,7 @@ export default function Home() {
           <Skills />
           <Experience />
           <Education />
-          <Projects />
+          <Projects projects={projects} />
           <Reviews />
           <Contact />
         </main>
@@ -64,3 +67,8 @@ export default function Home() {
     </>
   );
 }
+
+export const getServerSideProps: GetServerSideProps<{ projects: Project[] }> = async () => {
+  const content = await loadPortfolioData();
+  return { props: { projects: content.projects.projects } };
+};

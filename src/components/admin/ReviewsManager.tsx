@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import projectData from '@/data/projects.json';
+import type { Project } from '@/data';
 
 type Review = {
   id: string; client_name: string; client_email: string; company?: string;
@@ -11,7 +11,7 @@ type Review = {
 
 const statusLabel: Record<string, string> = { invited: 'Link sent', pending: 'Needs approval', published: 'Published', hidden: 'Hidden' };
 
-export default function ReviewsManager() {
+export default function ReviewsManager({ projects }: { projects: Project[] }) {
   const router = useRouter();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [inviteUrl, setInviteUrl] = useState('');
@@ -62,7 +62,7 @@ export default function ReviewsManager() {
         <label className="admin-field"><span>Client name</span><input className="input-field" value={form.clientName} onChange={e => setForm({ ...form, clientName: e.target.value })} placeholder="Full name" required /></label>
         <label className="admin-field"><span>Private client email</span><input className="input-field" type="email" value={form.clientEmail} onChange={e => setForm({ ...form, clientEmail: e.target.value })} placeholder="client@company.com" required /><small>Used for verification and never shown automatically.</small></label>
         <label className="admin-field"><span>Company</span><input className="input-field" value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} placeholder="Optional" /></label>
-        <label className="admin-field"><span>Completed project</span><select className="input-field" value={form.projectId} onChange={e => { const project = projectData.projects.find(item => item.id === e.target.value); setForm({ ...form, projectId: e.target.value, projectTitle: project?.title || '' }); }} required><option value="">Select a project</option>{projectData.projects.map(project => <option key={project.id} value={project.id}>{project.title}</option>)}</select></label>
+        <label className="admin-field"><span>Completed project</span><select className="input-field" value={form.projectId} onChange={e => { const project = projects.find(item => item.id === e.target.value); setForm({ ...form, projectId: e.target.value, projectTitle: project?.title || '' }); }} required><option value="">Select a project</option>{projects.map(project => <option key={project.id} value={project.id}>{project.title}</option>)}</select></label>
         <button className="admin-primary-button admin-review-generate" type="submit">Generate private review link <span>→</span></button>
       </form>
       {message && <div className="admin-message admin-review-message"><span>✓</span>{message}</div>}

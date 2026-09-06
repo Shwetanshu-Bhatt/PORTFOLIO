@@ -21,7 +21,7 @@ Your portfolio now includes a built-in admin panel for managing all content with
 
 ## Managing Content
 
-The admin panel has 5 sections:
+The admin panel has 6 sections:
 
 ### 1. Projects
 - Add/edit/remove projects
@@ -50,18 +50,13 @@ The admin panel has 5 sections:
 
 ## How Changes Work
 
-Since this is hosted on Vercel (serverless), the workflow is:
+1. **Edit content** in the admin panel.
+2. **Upload a project image**, if needed. The image is uploaded immediately, but is not published until you save the content changes.
+3. **Click "Save changes"**. This stores the complete portfolio content in the database and makes it available to the live homepage.
+4. **Open "View live portfolio"** to verify the published result.
+5. Use **"Export backup"** when you want a downloadable JSON copy for version control or recovery.
 
-1. **Edit content** in the admin panel
-2. **Click "Save to Browser"** to persist changes in your browser's localStorage
-3. **Click "Export JSON"** to download the updated data
-4. **Update the JSON files** in your repository:
-   - `src/data/projects.json`
-   - `src/data/skills.json`
-   - `src/data/experience.json`
-   - `src/data/education.json`
-   - `src/data/personal.json`
-5. **Commit and push** to GitHub - Vercel will automatically redeploy
+The first deployment must apply the portfolio content migration with `npm run db:migrate` after adding the `DATABASE_URL` environment variable. The migration script includes this table automatically.
 
 ## Data Structure
 
@@ -79,10 +74,9 @@ src/data/
 
 ## Tips
 
-- Use "Save to Browser" frequently while editing to prevent losing work
-- The export button downloads a combined JSON file with all data
-- Changes in localStorage are per-browser (won't sync across devices)
-- For permanent changes, you must update the JSON files in your repo
+- The admin panel shows an "Unsaved changes" warning while you edit
+- If the database is temporarily unavailable, the live site falls back to the checked-in JSON content
+- Export backups regularly if you want a local copy of your content
 
 ## Security Notes
 

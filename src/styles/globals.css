@@ -821,3 +821,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .hero-stage { min-height: 430px; }
   .hero-stage .stage-profile-card { width: 76%; margin: auto auto 0; }
 }
+.admin-save-status { align-self: center; color: #7c8577; font-size: 0.68rem; font-weight: 750; white-space: nowrap; }
+.admin-save-status.is-dirty { color: #9a6500; }
+.admin-upload-status { color: #5b8b1c !important; font-weight: 750; }
+.admin-load-error { display: grid; min-height: 100vh; place-content: center; gap: 0.75rem; padding: 2rem; color: #273024; background: #f7f9f4; }
+.admin-load-error p { max-width: 34rem; margin: 0; color: #687263; }
+.admin-load-error button { width: fit-content; padding-inline: 1rem; }

@@ -40,6 +40,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('projects');
   const [message, setMessage] = useState('');
+  const [loadError, setLoadError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Data states
   const [projects, setProjects] = useState<Project[]>(typedProjects.projects);
@@ -47,6 +50,12 @@ export default function AdminDashboard() {
   const [experiences, setExperiences] = useState<Experience[]>(typedExperience.experiences);
   const [education, setEducation] = useState<Education[]>(typedEducation.education);
   const [personal, setPersonal] = useState<Personal>(typedPersonal);
+
+  const updateProjects = (next: Project[]) => { setProjects(next); setHasUnsavedChanges(true); };
+  const updateSkills = (next: SkillCategory[]) => { setSkills(next); setHasUnsavedChanges(true); };
+  const updateExperiences = (next: Experience[]) => { setExperiences(next); setHasUnsavedChanges(true); };
+  const updateEducation = (next: Education[]) => { setEducation(next); setHasUnsavedChanges(true); };
+  const updatePersonal = (next: Personal) => { setPersonal(next); setHasUnsavedChanges(true); };
 
   const selectTab = (tab: Tab) => {
     setActiveTab(tab);
@@ -60,33 +69,74 @@ export default function AdminDashboard() {
   }, [router.isReady, router.query.section]);
 
   useEffect(() => {
-    // Check authentication
-    fetch('/api/admin/auth')
-      .then(res => res.json())
-      .then(data => {
-        if (!data.authenticated) {
-          router.push('/admin/login');
-        } else {
-          setLoading(false);
-          // Load from localStorage if available
-          const saved = localStorage.getItem('portfolio_admin_data');
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            if (parsed.projects) setProjects(parsed.projects);
-            if (parsed.skills) setSkills(parsed.skills);
-            if (parsed.experiences) setExperiences(parsed.experiences);
-            if (parsed.education) setEducation(parsed.education);
-            if (parsed.personal) setPersonal(parsed.personal);
-          }
+    let cancelled = false;
+
+    async function loadContent() {
+      try {
+        const authResponse = await fetch('/api/admin/auth');
+        const auth = await authResponse.json();
+        if (!auth.authenticated) {
+          await router.push('/admin/login');
+          return;
         }
-      });
+
+        const contentResponse = await fetch('/api/admin/content');
+        const content = await contentResponse.json();
+        if (!contentResponse.ok) throw new Error(content.error || 'Could not load portfolio content.');
+        if (cancelled) return;
+
+        setProjects(content.projects.projects);
+        setSkills(content.skills.categories);
+        setExperiences(content.experience.experiences);
+        setEducation(content.education.education);
+        setPersonal(content.personal);
+        setHasUnsavedChanges(false);
+        setLoading(false);
+      } catch (error) {
+        if (cancelled) return;
+        setLoadError(error instanceof Error ? error.message : 'Could not load portfolio content.');
+        setLoading(false);
+      }
+    }
+
+    void loadContent();
+    return () => { cancelled = true; };
   }, [router]);
 
-  const saveToLocalStorage = () => {
-    const data = { projects, skills, experiences, education, personal };
-    localStorage.setItem('portfolio_admin_data', JSON.stringify(data));
-    setMessage('Draft saved in this browser. Export JSON when you are ready to publish it.');
-    setTimeout(() => setMessage(''), 3000);
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedChanges) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  const saveChanges = async () => {
+    setIsSaving(true);
+    setMessage('');
+    try {
+      const response = await fetch('/api/admin/content', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projects: { projects },
+          skills: { categories: skills },
+          experience: { experiences },
+          education: { education },
+          personal,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not save changes.');
+      setHasUnsavedChanges(false);
+      setMessage('Changes saved. Open the live portfolio to verify them.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not save changes.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const exportJSON = () => {
@@ -108,7 +158,7 @@ export default function AdminDashboard() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    setMessage('JSON exported! Update the files in src/data/ folder.');
+    setMessage('Backup JSON exported.');
     setTimeout(() => setMessage(''), 5000);
   };
 
@@ -125,6 +175,10 @@ export default function AdminDashboard() {
     );
   }
 
+  if (loadError) {
+    return <div className="admin-load-error"><strong>Could not load your portfolio content.</strong><p>{loadError}</p><button className="admin-primary-button" onClick={() => window.location.reload()}>Try again</button></div>;
+  }
+
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
@@ -139,7 +193,7 @@ export default function AdminDashboard() {
       </aside>
 
       <main className="admin-main">
-        <header className="admin-topbar"><div><span className="admin-eyebrow">{activeTab === 'reviews' ? 'Client proof' : 'Portfolio content'}</span><h1>{tabInfo[activeTab].label}</h1><p>{tabInfo[activeTab].description}</p></div>{activeTab !== 'reviews' && <div className="admin-actions"><button onClick={saveToLocalStorage} className="admin-secondary-button">Save draft</button><button onClick={exportJSON} className="admin-primary-button">Export to publish</button></div>}</header>
+        <header className="admin-topbar"><div><span className="admin-eyebrow">{activeTab === 'reviews' ? 'Client proof' : 'Portfolio content'}</span><h1>{tabInfo[activeTab].label}</h1><p>{tabInfo[activeTab].description}</p></div>{activeTab !== 'reviews' && <div className="admin-actions"><span className={`admin-save-status${hasUnsavedChanges ? ' is-dirty' : ''}`}>{hasUnsavedChanges ? 'Unsaved changes' : 'All changes saved'}</span><button onClick={saveChanges} className="admin-primary-button" disabled={isSaving || !hasUnsavedChanges}>{isSaving ? 'Saving…' : 'Save changes'}</button><button onClick={exportJSON} className="admin-secondary-button">Export backup</button></div>}</header>
 
         {/* Message */}
         {message && (
@@ -149,21 +203,21 @@ export default function AdminDashboard() {
         {/* Content Editors */}
         <div className="admin-content">
           {activeTab === 'projects' && (
-            <ProjectsEditor projects={projects} setProjects={setProjects} />
+            <ProjectsEditor projects={projects} setProjects={updateProjects} />
           )}
           {activeTab === 'skills' && (
-            <SkillsEditor skills={skills} setSkills={setSkills} />
+            <SkillsEditor skills={skills} setSkills={updateSkills} />
           )}
           {activeTab === 'experience' && (
-            <ExperienceEditor experiences={experiences} setExperiences={setExperiences} />
+            <ExperienceEditor experiences={experiences} setExperiences={updateExperiences} />
           )}
           {activeTab === 'education' && (
-            <EducationEditor education={education} setEducation={setEducation} />
+            <EducationEditor education={education} setEducation={updateEducation} />
           )}
           {activeTab === 'personal' && (
-            <PersonalEditor personal={personal} setPersonal={setPersonal} />
+            <PersonalEditor personal={personal} setPersonal={updatePersonal} />
           )}
-          {activeTab === 'reviews' && <ReviewsManager />}
+          {activeTab === 'reviews' && <ReviewsManager projects={projects} />}
         </div>
       </main>
     </div>
@@ -172,6 +226,8 @@ export default function AdminDashboard() {
 
 // Projects Editor
 function ProjectsEditor({ projects, setProjects }: { projects: Project[]; setProjects: (p: Project[]) => void }) {
+  const [uploadingProjectId, setUploadingProjectId] = useState<string | null>(null);
+
   const addProject = () => {
     const newProject: Project = {
       id: `project-${Date.now()}`,
@@ -206,14 +262,23 @@ function ProjectsEditor({ projects, setProjects }: { projects: Project[]; setPro
       window.alert('Choose a JPG, PNG, or WebP image smaller than 3 MB.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const res = await fetch('/api/admin/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageData: reader.result, folder: 'portfolio/projects' }) });
+    setUploadingProjectId(projects[index].id);
+    try {
+      const imageData = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error('Could not read that image.'));
+        reader.readAsDataURL(file);
+      });
+      const res = await fetch('/api/admin/upload-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageData, folder: 'portfolio/projects' }) });
       const data = await res.json();
-      if (!res.ok) return window.alert(data.error || 'Image upload failed.');
+      if (!res.ok) throw new Error(data.error || 'Image upload failed.');
       updateProject(index, 'image', data.url);
-    };
-    reader.readAsDataURL(file);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Image upload failed.');
+    } finally {
+      setUploadingProjectId(null);
+    }
   };
 
   return (
@@ -236,7 +301,7 @@ function ProjectsEditor({ projects, setProjects }: { projects: Project[]; setPro
               placeholder="Project Title"
               className="input-field"
             /></AdminField>
-            <AdminField label="Project image" hint="Optional. Used in the featured layout; JPG, PNG, or WebP up to 3 MB." wide><div className="admin-project-image-control"><input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => uploadProjectImage(index, e.target.files?.[0])} />{project.image && <><Image src={project.image} alt="Project preview" width={640} height={360} unoptimized /><button type="button" onClick={() => updateProject(index, 'image', '')}>Remove image</button></>}</div></AdminField>
+          <AdminField label="Project image" hint="Optional. Upload first, then save changes to publish this project." wide><div className="admin-project-image-control"><input type="file" accept="image/jpeg,image/png,image/webp" disabled={uploadingProjectId === project.id} onChange={e => uploadProjectImage(index, e.target.files?.[0])} />{uploadingProjectId === project.id && <small className="admin-upload-status">Uploading image…</small>}{project.image && <><Image src={project.image} alt="Project preview" width={640} height={360} unoptimized /><button type="button" onClick={() => updateProject(index, 'image', '')}>Remove image</button></>}</div></AdminField>
             <AdminField label="Project link" hint="Use # when there is no public link yet."><input
               type="text"
               value={project.link}
