@@ -4,7 +4,7 @@ export default function Experience() {
   return (
     <section className="site-section" id="experience">
       <div className="section-inner editorial-grid">
-        <div className="section-index" aria-hidden="true">03</div>
+        <div className="section-index" aria-hidden="true">04</div>
         <div>
           <div className="section-mark">Experience</div>
           <h2 className="section-heading">Proof, not <em>promises.</em></h2>

@@ -4,7 +4,7 @@ export default function Education() {
   return (
     <section className="site-section" id="education">
       <div className="section-inner editorial-grid">
-        <div className="section-index" aria-hidden="true">04</div>
+        <div className="section-index" aria-hidden="true">05</div>
         <div>
           <div className="section-mark">The long game</div>
           <h2 className="section-heading">Still <em>learning.</em></h2>

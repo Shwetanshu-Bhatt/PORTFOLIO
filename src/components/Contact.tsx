@@ -13,9 +13,9 @@ export default function Contact() {
             <a className="contact-link" href={`mailto:${personal.email}`}>{personal.email}</a>
             <p className="contact-note">Tell me what is stuck, what is slow, or what needs to exist. I&apos;ll get back to you with a clear next step.</p>
             <div className="local-service-links" aria-label="Development services in Dehradun">
-              <Link href="/freelance-developer-dehradun/">Freelance development</Link>
-              <Link href="/web-developer-dehradun/">Web development</Link>
-              <Link href="/backend-developer-dehradun/">Backend development</Link>
+              <Link href="/#services">Freelance development</Link>
+              <Link href="/#services">Web development</Link>
+              <Link href="/#services">Backend development</Link>
             </div>
             <div className="social-row">
               <a href={personal.github} target="_blank" rel="noreferrer">GitHub ↗</a>

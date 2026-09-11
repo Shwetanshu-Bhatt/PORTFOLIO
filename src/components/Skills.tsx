@@ -4,7 +4,7 @@ export default function Skills() {
   return (
     <section className="site-section skills-section" id="skills">
       <div className="section-inner editorial-grid">
-        <div className="section-index" aria-hidden="true">02</div>
+        <div className="section-index" aria-hidden="true">03</div>
         <div>
           <div className="section-mark">Working stack</div>
           <h2 className="section-heading">A stack for the <em>messy parts.</em></h2>
