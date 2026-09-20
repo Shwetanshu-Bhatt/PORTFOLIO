@@ -86,12 +86,6 @@ export default function Hero() {
         </div>
       </div>
 
-      <div className="hero-marquee" aria-hidden="true">
-        <div>Make it useful <span>-</span> Make it resilient <span>-</span> Make it feel alive <span>-</span> Make it useful <span>-</span> Make it resilient <span>-</span></div>
-      </div>
-      <div> 
-      <a className="hero-scroll" href="#about">Scroll to inspect</a>
-      </div>
     </section>
   );
 }

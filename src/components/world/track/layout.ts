@@ -3,9 +3,9 @@ import { TRACK_CONTROL_POINTS } from './sections';
 
 export const TRACK_WIDTH = 18;
 export const TRACK_WORLD_SIZE = 720;
-// Dense sampling keeps the road ribbon and its curbs following the spline
-// continuously instead of exposing the individual construction segments.
-export const TRACK_SAMPLE_COUNT = 360;
+// Keep the render/collision path smooth without making every road detail a
+// separate draw call.
+export const TRACK_SAMPLE_COUNT = 180;
 
 const trackCurve = new THREE.CatmullRomCurve3(TRACK_CONTROL_POINTS, true, 'centripetal');
 export const TRACK_PATH = Array.from({ length: TRACK_SAMPLE_COUNT }, (_value, index) => trackCurve.getPointAt(index / TRACK_SAMPLE_COUNT));
@@ -17,10 +17,9 @@ export const TRACK_SPAWN = {
   z: TRACK_PATH[0].z,
   rotation: Math.atan2(TRACK_PATH[1].x - TRACK_PATH[0].x, TRACK_PATH[1].z - TRACK_PATH[0].z),
 };
-export const HARD_TURN_POINTS = [42, 61, 87, 148, 177, 219, 254, 293, 328];
+const HARD_TURN_POINTS_AT_360 = [42, 61, 87, 148, 177, 219, 254, 293, 328];
+export const HARD_TURN_POINTS = HARD_TURN_POINTS_AT_360.map((index) => Math.round(index * TRACK_SAMPLE_COUNT / 360));
 export const RACE_CHECKPOINT_INDICES = Array.from({ length: 12 }, (_value, index) => Math.floor(index * TRACK_SAMPLE_COUNT / 12));
-export const DIRT_SEGMENT_START = Math.floor(TRACK_SAMPLE_COUNT * 0.42);
-export const DIRT_SEGMENT_END = Math.floor(TRACK_SAMPLE_COUNT * 0.57);
 
 export function nearestTrackPoint(x: number, z: number, y?: number, hintIndex?: number) {
   let closest = Infinity;

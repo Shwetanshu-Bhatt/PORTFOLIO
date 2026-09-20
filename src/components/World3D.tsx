@@ -25,8 +25,6 @@ import { createCollisionResolver } from './world/physics/collisions';
 import { formatRaceTime, getGridSpawn, normalizeDriverName } from './world/race/utils';
 import { createTrack } from './world/track/createTrack';
 import {
-  DIRT_SEGMENT_END,
-  DIRT_SEGMENT_START,
   RACE_CHECKPOINT_INDICES,
   TRACK_HEIGHTS,
   TRACK_POINTS,
@@ -56,6 +54,11 @@ interface WorldGameProps extends World3DProps {
 export default function World3D({ onBack }: World3DProps) {
   const [draftName, setDraftName] = useState('');
   const [playerName, setPlayerName] = useState('');
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   if (!playerName) {
     return (
@@ -69,9 +72,9 @@ export default function World3D({ onBack }: World3DProps) {
             if (normalizedName.length >= 2) setPlayerName(normalizedName);
           }}
         >
-          <span className="world-name-kicker">Multiplayer grid</span>
-          <h1>Choose your driver name</h1>
-          <p>This appears above your car for every racer.</p>
+          <span className="world-name-kicker">MIDNIGHT COAST // DRIVER ACCESS</span>
+          <h1>Enter the night drive</h1>
+          <p>Choose a callsign for the district circuit. Other racers will see it above your car.</p>
           <label htmlFor="world-driver-name">Driver name</label>
           <input
             id="world-driver-name"
@@ -83,7 +86,7 @@ export default function World3D({ onBack }: World3DProps) {
             autoFocus
             placeholder="Enter your name"
           />
-          <button type="submit" disabled={normalizeDriverName(draftName).length < 2}>Enter circuit</button>
+          <button type="submit" disabled={!isHydrated || normalizeDriverName(draftName).length < 2}>Start the drive</button>
         </form>
       </div>
     );
@@ -126,7 +129,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
   });
   const [multiplayerStatus, setMultiplayerStatus] = useState<'connecting' | 'online' | 'solo' | 'full' | 'spectating'>('connecting');
   const [playerCount, setPlayerCount] = useState(1);
-  const playerColorRef = useRef<number>(WORLD_PLAYER_COLORS[Math.floor(Math.random() * WORLD_PLAYER_COLORS.length)]);
+  const playerColorRef = useRef<number>(WORLD_PLAYER_COLORS[0]);
   const [playerColor, setPlayerColor] = useState<number>(playerColorRef.current);
   const [raceState, setRaceState] = useState<WorldRaceState>(raceStateRef.current);
   const [raceProgress, setRaceProgress] = useState<RaceProgress>(raceProgressRef.current);
@@ -138,7 +141,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
   const [opponents, setOpponents] = useState<Array<{ id: string; name: string; color: number; x: number; z: number; lap: number; checkpoint: number; finishedAt: number; bestLap: number }>>([]);
   const [nearbyBuilding, setNearbyBuilding] = useState<BuildingData | null>(null);
   const [activeBuilding, setActiveBuilding] = useState<BuildingData | null>(null);
-  const clockRef = useRef<THREE.Clock | null>(null);
+  const clockRef = useRef<THREE.Timer | null>(null);
   const buildingsRef = useRef<BuildingData[]>([]);
   const obstaclesRef = useRef<CircularObstacle[]>([]);
   const guardRailCollidersRef = useRef<GuardRailCollider[]>([]);
@@ -184,7 +187,9 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       onTrack: true,
     };
 
-    clockRef.current = new THREE.Clock();
+    const timer = new THREE.Timer();
+    timer.connect(document);
+    clockRef.current = timer;
     console.log('initScene complete, setting loading false');
     setLoading(false);
   }, [playerName]);
@@ -253,6 +258,8 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         container.removeChild(rendererRef.current.domElement);
         rendererRef.current.dispose();
       }
+      clockRef.current?.disconnect();
+      clockRef.current = null;
     };
   }, [initScene]);
 
@@ -263,10 +270,12 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     const car = carRef.current;
     const body = carBodyRef.current;
     const clock = clockRef.current;
+    let cachedCarWheels = findCarWheels(car);
 
     const {
       maxSpeed, nitroMaxSpeed, reverseSpeed, reverseAcceleration, acceleration,
       nitroAcceleration, brakeForce, handbrakeForce, turnSpeed, steeringRate, maxSteer,
+      gravity, jumpLaunchSpeed, landingSpeedLoss,
     } = VEHICLE_PHYSICS;
 
     const buildings = buildingsRef.current;
@@ -281,6 +290,8 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     let lastGear = 'N';
     let lastSurface: 'ASPHALT' | 'DIRT' | 'OFF ROAD' = 'ASPHALT';
     let previousLongitudinal = 0;
+    let previousTrackSlope = 0;
+    let airborne = false;
     let activeRaceId = raceStateRef.current.id;
     let checkpointArmed = true;
     let lastCountdown = '';
@@ -345,6 +356,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate);
 
+      clock.update();
       const delta = Math.min(clock.getDelta(), 0.1);
       const dt = Math.min(delta, 0.05);
       const currentRace = raceStateRef.current;
@@ -405,7 +417,12 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       const onRoad = trackContact.distance <= TRACK_WIDTH / 2;
       const canFollowTrackHeight = trackContact.height <= 3.5 || trackHeightError <= 3.5;
       body.onTrack = onRoad;
-      const onDirt = onRoad && trackContact.index >= DIRT_SEGMENT_START && trackContact.index <= DIRT_SEGMENT_END;
+      const onDirt = false;
+      const nextTrackIndex = (trackContact.index + 1) % TRACK_POINTS.length;
+      const [trackX, trackZ] = TRACK_POINTS[trackContact.index];
+      const [nextTrackX, nextTrackZ] = TRACK_POINTS[nextTrackIndex];
+      const trackDistance = Math.hypot(nextTrackX - trackX, nextTrackZ - trackZ) || 1;
+      const trackSlope = (TRACK_HEIGHTS[nextTrackIndex] - TRACK_HEIGHTS[trackContact.index]) / trackDistance;
       const longitudinal = body.velocity.dot(forward);
       let nextLongitudinal = longitudinal;
       let lateral = body.velocity.dot(rightAxis);
@@ -445,16 +462,40 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       const tireGrip = isDrifting ? 1.35 : onDirt ? 6.2 : onRoad ? 13 : 4.2;
       lateral *= Math.exp(-tireGrip * dt);
       if (isDrifting) nextLongitudinal *= Math.exp(-0.42 * dt);
+      if (onRoad && !airborne) nextLongitudinal -= gravity * trackSlope * dt;
       const surfaceMaxSpeed = onDirt ? 35 : onRoad ? (canBoost ? nitroMaxSpeed : maxSpeed) : 18;
       nextLongitudinal = THREE.MathUtils.clamp(nextLongitudinal, -reverseSpeed, surfaceMaxSpeed);
       body.velocity.copy(forward).multiplyScalar(nextLongitudinal).addScaledVector(rightAxis, lateral);
 
       body.position.addScaledVector(body.velocity, dt);
-      body.position.y = THREE.MathUtils.lerp(
-        body.position.y,
-        onRoad && canFollowTrackHeight ? trackContact.height : 0,
-        1 - Math.exp(-10 * dt),
-      );
+      const nearTrackSurface = onRoad && Math.abs(body.position.y - trackContact.height) < 0.75;
+      if (!airborne && nearTrackSurface && previousTrackSlope > 0.055 && trackSlope < -0.045 && Math.abs(nextLongitudinal) > 12) {
+        airborne = true;
+        body.velocity.y = THREE.MathUtils.clamp(jumpLaunchSpeed + Math.abs(nextLongitudinal) * 0.22, jumpLaunchSpeed, 13);
+      }
+
+      if (airborne) {
+        body.velocity.y -= gravity * dt;
+        body.position.y += body.velocity.y * dt;
+        const landingContact = nearestTrackPoint(body.position.x, body.position.z, body.position.y, body.trackIndex);
+        body.trackIndex = landingContact.index;
+        if (landingContact.distance <= TRACK_WIDTH / 2 && body.velocity.y <= 0 && body.position.y <= landingContact.height + 0.3) {
+          const landingSpeed = Math.abs(body.velocity.y);
+          body.position.y = landingContact.height;
+          body.velocity.y = 0;
+          airborne = false;
+          nextLongitudinal *= Math.max(0.82, 1 - landingSpeed * landingSpeedLoss);
+          body.velocity.copy(forward).multiplyScalar(nextLongitudinal).addScaledVector(rightAxis, lateral);
+        }
+      } else {
+        body.velocity.y = 0;
+        body.position.y = THREE.MathUtils.lerp(
+          body.position.y,
+          onRoad && canFollowTrackHeight ? trackContact.height : 0,
+          1 - Math.exp(-10 * dt),
+        );
+      }
+      previousTrackSlope = trackSlope;
 
       if (!spectatorRef.current) {
         const targetCheckpoint = (lastCheckpointRef.current + 1) % RACE_CHECKPOINT_INDICES.length;
@@ -487,8 +528,11 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
         }
       }
 
-      const wheels = findCarWheels(car);
-      wheels.forEach((wheel) => {
+      if (frameCount % 30 === 0) {
+        const detectedWheels = findCarWheels(car);
+        if (detectedWheels.length > 0) cachedCarWheels = detectedWheels;
+      }
+      cachedCarWheels.forEach((wheel) => {
         wheel.rotation.x += nextLongitudinal * dt * 1.75;
         if (wheel.userData.isFrontWheel) {
           wheel.rotation.y = THREE.MathUtils.lerp(wheel.rotation.y, body.steer * 0.58, 1 - Math.exp(-14 * dt));
@@ -634,7 +678,10 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       car.rotation.y = body.rotation;
       car.rotation.z = THREE.MathUtils.lerp(car.rotation.z, -body.steer * Math.min(Math.abs(nextLongitudinal) / 20, 1) * 0.12, 1 - Math.exp(-8 * dt));
       const accelerationPitch = THREE.MathUtils.clamp((nextLongitudinal - previousLongitudinal) / Math.max(dt, 0.001) / 80, -0.05, 0.05);
-      car.rotation.x = THREE.MathUtils.lerp(car.rotation.x, accelerationPitch, 1 - Math.exp(-7 * dt));
+      const pitchTarget = airborne
+        ? -Math.atan2(body.velocity.y, Math.max(Math.abs(nextLongitudinal), 1))
+        : THREE.MathUtils.clamp(-Math.atan(trackSlope) + accelerationPitch, -0.45, 0.45);
+      car.rotation.x = THREE.MathUtils.lerp(car.rotation.x, pitchTarget, 1 - Math.exp(-7 * dt));
       previousLongitudinal = nextLongitudinal;
 
       const now = Date.now();
@@ -657,7 +704,7 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       });
 
       frameCount += 1;
-      if (frameCount % 4 === 0) {
+      if (frameCount % 8 === 0) {
         const nextSpeed = Math.round(Math.abs(nextLongitudinal) * 3.6);
         if (nextSpeed !== lastSpeed) {
           lastSpeed = nextSpeed;
@@ -1129,26 +1176,26 @@ function WorldGame({ onBack, playerName }: WorldGameProps) {
       <div className="world-toolbar">
         {onBack && (
           <button onClick={onBack} className="world-button world-button-back">
-            <span>←</span> Exit field
+            <span>←</span> Leave district
           </button>
         )}
         <button onClick={() => setShowControls(!showControls)} className={`world-button${showControls ? ' is-active' : ''}`}>
-          <span>01</span> Controls
+          <span>01</span> Driving
         </button>
         <button onClick={() => setShowMap(!showMap)} className={`world-button${showMap ? ' is-active' : ''}`}>
-          <span>02</span> Map
+          <span>02</span> Route
         </button>
       </div>
 
       <div className="world-title-lockup">
-        <span>SB // INTERACTIVE DISTRICT</span>
-        <strong>NIGHT DRIVE</strong>
+        <span>SB // MIDNIGHT COAST</span>
+        <strong>DISTRICT LOOP</strong>
       </div>
 
       <div className="world-mission">
-        <span className="world-mission-kicker">Circuit race</span>
-        <strong>{raceState.phase === 'countdown' ? 'Race in progress' : raceState.phase === 'finished' ? 'Race complete' : 'Waiting on the grid'}</strong>
-        <small>Three laps · twelve checkpoints · eight drivers</small>
+        <span className="world-mission-kicker">Live street circuit</span>
+        <strong>{raceState.phase === 'countdown' ? 'Race in progress' : raceState.phase === 'finished' ? 'Race complete' : 'Meet at the grid'}</strong>
+        <small>Three laps · neon skyline · eight drivers</small>
       </div>
 
       <div className="world-race-strip">

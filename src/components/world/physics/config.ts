@@ -10,4 +10,7 @@ export const VEHICLE_PHYSICS = {
   turnSpeed: 2.35,
   steeringRate: 5.5,
   maxSteer: 0.68,
+  gravity: 24,
+  jumpLaunchSpeed: 7.5,
+  landingSpeedLoss: 0.08,
 } as const;

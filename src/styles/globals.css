@@ -840,3 +840,34 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .admin-load-error { display: grid; min-height: 100vh; place-content: center; gap: 0.75rem; padding: 2rem; color: #273024; background: #f7f9f4; }
 .admin-load-error p { max-width: 34rem; margin: 0; color: #687263; }
 .admin-load-error button { width: fit-content; padding-inline: 1rem; }
+.world-shell { background: #080d1b; }
+.world-shell::after { background: radial-gradient(circle at 50% 44%, transparent 28%, rgba(6, 8, 23, 0.5) 100%), linear-gradient(180deg, rgba(12, 10, 38, 0.08), transparent 52%, rgba(3, 7, 17, 0.72)); }
+.world-name-gate { background: radial-gradient(circle at 50% 32%, rgba(255, 79, 163, .23), transparent 26rem), linear-gradient(160deg, #090d22, #21113f 54%, #071b29); }
+.world-name-card { border-color: rgba(255, 79, 163, .5); border-top-color: #ff4fa3; background: linear-gradient(145deg, rgba(11, 16, 39, .96), rgba(39, 17, 59, .96)); }
+.world-name-kicker { color: #61e7ff; }
+.world-title-lockup span { color: #61e7ff; }
+.world-title-lockup strong { color: #fff4df; letter-spacing: .22em; text-shadow: 0 0 22px rgba(255, 79, 163, .46); }
+.world-mission { border-top-color: #61e7ff; border-right-color: rgba(97, 231, 255, .35); background: linear-gradient(110deg, rgba(7, 17, 38, .94), rgba(50, 17, 65, .86)); }
+.world-mission-kicker { color: #61e7ff; }
+.world-button { border-color: rgba(97, 231, 255, .42); background: rgba(8, 16, 34, .8); }
+.world-button:hover, .world-button:focus-visible, .world-button.is-active { border-color: #ff4fa3; color: #fff; background: rgba(51, 19, 65, .92); box-shadow: 0 0 22px rgba(255, 79, 163, .18); }
+.world-race-strip { border-color: rgba(255, 79, 163, .35); background: rgba(7, 14, 31, .86); box-shadow: 0 0 35px rgba(255, 79, 163, .12); }
+.world-race-strip small { color: #ff9bc8; }
+.world-ready-card, .world-results, .world-standings { background: rgba(7, 13, 29, .9); box-shadow: 0 1rem 3rem rgba(0, 0, 0, .28); }
+.world-ready-card { border-left-color: #ff4fa3; }
+.world-hud { border-top-color: #ff4fa3; background: linear-gradient(100deg, rgba(5, 13, 28, .96), rgba(30, 11, 47, .92)); box-shadow: 0 .7rem 2.5rem rgba(0, 0, 0, .55), 0 0 34px rgba(255, 79, 163, .14); }
+.world-gear span, .world-hud-label { color: #61e7ff; }
+.world-speed-value { text-shadow: 0 0 18px rgba(255, 79, 163, .4); }
+.world-surface { border-right-color: #61e7ff; }
+.world-loading { background: radial-gradient(circle at 50% 42%, #24134b, #070d1b 62%); }
+.world-loading-mark { border-color: #ff4fa3; color: #fff; box-shadow: 0 0 25px rgba(255, 79, 163, .3); }
+@media (max-width: 700px) {
+  .world-title-lockup, .world-mission, .world-surface { display: none; }
+  .world-hud { bottom: .85rem; }
+}
+.world-name-gate { background: radial-gradient(circle at 50% 28%, rgba(255, 255, 255, .3), transparent 22rem), linear-gradient(160deg, #1b7fb5, #65c6d2 54%, #f6b477); }
+.world-name-card { border-color: rgba(255, 255, 255, .55); border-top-color: #ff5d82; background: linear-gradient(145deg, rgba(17, 63, 93, .94), rgba(30, 106, 126, .9)); }
+.world-shell { background: #64c9d4; }
+.world-shell::after { background: linear-gradient(180deg, rgba(255, 235, 192, .05), transparent 58%, rgba(10, 67, 70, .28)); }
+.world-mission { background: linear-gradient(110deg, rgba(12, 72, 94, .88), rgba(46, 107, 121, .84)); }
+.world-loading { background: linear-gradient(160deg, #1b7fb5, #65cbd1 60%, #f4b47c); }

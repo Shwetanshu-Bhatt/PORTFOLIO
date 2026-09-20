@@ -27,18 +27,24 @@ function addStartGrid(scene: THREE.Scene, materials: TrackMaterials) {
 
 function addDrivingLine(scene: THREE.Scene) {
   const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const stripeGeometry = new THREE.BoxGeometry(0.22, 0.035, 4.8);
+  const stripeCount = Math.ceil(TRACK_POINTS.length / 3);
+  const stripes = new THREE.InstancedMesh(stripeGeometry, material, stripeCount);
+  const matrix = new THREE.Matrix4();
+  let stripeIndex = 0;
   TRACK_POINTS.forEach(([ax, az], index) => {
     if (index % 3 !== 0) return;
     const nextIndex = (index + 1) % TRACK_POINTS.length;
     const [bx, bz] = TRACK_POINTS[nextIndex];
     const dy = TRACK_HEIGHTS[nextIndex] - TRACK_HEIGHTS[index];
     const horizontalLength = Math.hypot(bx - ax, bz - az) || 1;
-    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.035, 4.8), material);
-    stripe.position.set((ax + bx) / 2, (TRACK_HEIGHTS[index] + TRACK_HEIGHTS[nextIndex]) / 2 + 0.19, (az + bz) / 2);
-    stripe.rotation.order = 'YXZ';
-    stripe.rotation.set(-Math.atan2(dy, horizontalLength), Math.atan2(bx - ax, bz - az), 0);
-    scene.add(stripe);
+    matrix.makeRotationFromEuler(new THREE.Euler(-Math.atan2(dy, horizontalLength), Math.atan2(bx - ax, bz - az), 0, 'YXZ'));
+    matrix.setPosition((ax + bx) / 2, (TRACK_HEIGHTS[index] + TRACK_HEIGHTS[nextIndex]) / 2 + 0.19, (az + bz) / 2);
+    stripes.setMatrixAt(stripeIndex, matrix);
+    stripeIndex += 1;
   });
+  stripes.instanceMatrix.needsUpdate = true;
+  scene.add(stripes);
 }
 
 function addCheckpoints(scene: THREE.Scene) {
@@ -54,6 +60,22 @@ function addCheckpoints(scene: THREE.Scene) {
       pylon.position.set(x + normalX * side * (TRACK_WIDTH / 2 + 0.4), TRACK_HEIGHTS[pointIndex] + 1.2, z + normalZ * side * (TRACK_WIDTH / 2 + 0.4));
       scene.add(pylon);
     });
+  });
+}
+
+function addStartArch(scene: THREE.Scene) {
+  const postMaterial = new THREE.MeshStandardMaterial({ color: 0x26394a, roughness: 0.45, metalness: 0.65 });
+  const neonMaterial = new THREE.MeshBasicMaterial({ color: 0xff5f86 });
+  const normalX = Math.cos(TRACK_SPAWN.rotation);
+  const normalZ = -Math.sin(TRACK_SPAWN.rotation);
+  const beam = new THREE.Mesh(new THREE.BoxGeometry(TRACK_WIDTH + 2.4, 0.34, 0.34), neonMaterial);
+  beam.position.set(TRACK_SPAWN.x, TRACK_SPAWN.y + 5.3, TRACK_SPAWN.z);
+  beam.rotation.y = TRACK_SPAWN.rotation;
+  scene.add(beam);
+  [-1, 1].forEach((side) => {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.34, 5.2, 0.34), postMaterial);
+    post.position.set(TRACK_SPAWN.x + normalX * side * (TRACK_WIDTH / 2 + 1), TRACK_SPAWN.y + 2.6, TRACK_SPAWN.z + normalZ * side * (TRACK_WIDTH / 2 + 1));
+    scene.add(post);
   });
 }
 
@@ -114,7 +136,7 @@ function addPitAndStands(scene: THREE.Scene, materials: TrackMaterials) {
 }
 
 function addTrackLights(scene: THREE.Scene, postMaterial: THREE.Material) {
-  TRACK_POINTS.filter((_point, index) => index % 3 === 0).forEach(([x, z], index) => {
+  TRACK_POINTS.filter((_point, index) => index % 12 === 0).forEach(([x, z], index) => {
     const nextIndex = (index + 1) % TRACK_POINTS.length;
     const [nextX, nextZ] = TRACK_POINTS[nextIndex];
     const length = Math.hypot(nextX - x, nextZ - z) || 1;
@@ -128,14 +150,9 @@ function addTrackLights(scene: THREE.Scene, postMaterial: THREE.Material) {
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.2, 8, 7), postMaterial);
     pole.position.set(poleX, 4, poleZ);
     scene.add(pole);
-    const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.35, 0.8), new THREE.MeshBasicMaterial({ color: 0xb9f6ff }));
+    const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.35, 0.8), new THREE.MeshBasicMaterial({ color: 0xf7c85d }));
     lamp.position.set(poleX, 8, poleZ);
     scene.add(lamp);
-    if (index % 2 === 0) {
-      const light = new THREE.PointLight(0x8aefff, 16, 35, 2);
-      light.position.set(poleX, 7.5, poleZ);
-      scene.add(light);
-    }
   });
 }
 
@@ -143,6 +160,7 @@ export function addTrackFeatures(scene: THREE.Scene, materials: TrackMaterials) 
   addStartGrid(scene, materials);
   addDrivingLine(scene);
   addCheckpoints(scene);
+  addStartArch(scene);
   addFlyoverSupports(scene);
   addPitAndStands(scene, materials);
   addTrackLights(scene, materials.railPost);

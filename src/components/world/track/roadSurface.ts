@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 import type { GuardRailCollider } from '../types';
 import {
-  DIRT_SEGMENT_END,
-  DIRT_SEGMENT_START,
   HARD_TURN_POINTS,
   TRACK_HEIGHTS,
   TRACK_POINTS,
@@ -11,7 +9,6 @@ import {
 
 export interface TrackMaterials {
   road: THREE.MeshStandardMaterial;
-  dirt: THREE.MeshStandardMaterial;
   curbWhite: THREE.MeshStandardMaterial;
   curbRed: THREE.MeshStandardMaterial;
   railPost: THREE.MeshStandardMaterial;
@@ -20,7 +17,6 @@ export interface TrackMaterials {
 export function addRoadSurface(scene: THREE.Scene) {
   const materials: TrackMaterials = {
     road: new THREE.MeshStandardMaterial({ color: 0x4b566d, emissive: 0x101525, emissiveIntensity: 0.6, roughness: 0.82, metalness: 0.04, side: THREE.DoubleSide }),
-    dirt: new THREE.MeshStandardMaterial({ color: 0x8d5a3b, roughness: 1, metalness: 0, side: THREE.DoubleSide }),
     curbWhite: new THREE.MeshStandardMaterial({ color: 0xf5efe5, roughness: 0.72 }),
     curbRed: new THREE.MeshStandardMaterial({ color: 0xe73545, roughness: 0.72 }),
     railPost: new THREE.MeshStandardMaterial({ color: 0x68717d, roughness: 0.58, metalness: 0.62 }),
@@ -29,8 +25,40 @@ export function addRoadSurface(scene: THREE.Scene) {
   const railMaterial = new THREE.MeshStandardMaterial({ color: 0xb7c0ca, roughness: 0.42, metalness: 0.78 });
   const whiteCurbs: THREE.Matrix4[] = [];
   const redCurbs: THREE.Matrix4[] = [];
+  const markerTransforms: THREE.Matrix4[] = [];
   const guardRails: GuardRailCollider[] = [];
   const guardedSegmentSides = new Map<number, Set<number>>();
+
+  const roadPositions: number[] = [];
+  const roadIndices: number[] = [];
+  TRACK_POINTS.forEach(([x, z], index) => {
+    const previousIndex = (index - 1 + TRACK_POINTS.length) % TRACK_POINTS.length;
+    const nextIndex = (index + 1) % TRACK_POINTS.length;
+    const [previousX, previousZ] = TRACK_POINTS[previousIndex];
+    const [nextX, nextZ] = TRACK_POINTS[nextIndex];
+    const tangentLength = Math.hypot(nextX - previousX, nextZ - previousZ) || 1;
+    const normalX = (nextZ - previousZ) / tangentLength;
+    const normalZ = -(nextX - previousX) / tangentLength;
+    const halfWidth = TRACK_WIDTH / 2;
+    const y = TRACK_HEIGHTS[index] + 0.09;
+    roadPositions.push(x + normalX * halfWidth, y, z + normalZ * halfWidth);
+    roadPositions.push(x - normalX * halfWidth, y, z - normalZ * halfWidth);
+  });
+  TRACK_POINTS.forEach((_point, index) => {
+    const nextIndex = (index + 1) % TRACK_POINTS.length;
+    const left = index * 2;
+    const right = left + 1;
+    const nextLeft = nextIndex * 2;
+    const nextRight = nextLeft + 1;
+    roadIndices.push(left, right, nextRight, left, nextRight, nextLeft);
+  });
+  const roadGeometry = new THREE.BufferGeometry();
+  roadGeometry.setAttribute('position', new THREE.Float32BufferAttribute(roadPositions, 3));
+  roadGeometry.setIndex(roadIndices);
+  roadGeometry.computeVertexNormals();
+  const roadMesh = new THREE.Mesh(roadGeometry, materials.road);
+  roadMesh.receiveShadow = false;
+  scene.add(roadMesh);
 
   HARD_TURN_POINTS.forEach((turnIndex) => {
     const previousIndex = (turnIndex - 1 + TRACK_POINTS.length) % TRACK_POINTS.length;
@@ -59,21 +87,9 @@ export function addRoadSurface(scene: THREE.Scene) {
     const length = Math.hypot(horizontalLength, dy);
     const angle = Math.atan2(dx, dz);
     const pitch = -Math.atan2(dy, horizontalLength);
-    const dirt = index >= DIRT_SEGMENT_START && index <= DIRT_SEGMENT_END;
-    const road = new THREE.Mesh(
-      new THREE.BoxGeometry(TRACK_WIDTH, 0.18, length + 4),
-      dirt ? materials.dirt : materials.road,
-    );
-    road.position.set((ax + bx) / 2, (ay + by) / 2 + 0.09, (az + bz) / 2);
-    road.rotation.order = 'YXZ';
-    road.rotation.set(pitch, angle, 0);
-    road.receiveShadow = true;
-    scene.add(road);
-
     const normalX = dz / length;
     const normalZ = -dx / length;
     for (let distance = 2.5, stripe = 0; distance < length - 2.4; distance += 5, stripe += 1) {
-      if (dirt) break;
       const t = distance / length;
       [-1, 1].forEach((side) => {
         const matrix = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(pitch, angle, 0, 'YXZ'));
@@ -87,11 +103,9 @@ export function addRoadSurface(scene: THREE.Scene) {
     }
     for (let distance = 7; distance < length; distance += 14) {
       const t = distance / length;
-      const marker = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, 4), markerMaterial);
-      marker.position.set(ax + dx * t, THREE.MathUtils.lerp(ay, by, t) + 0.15, az + dz * t);
-      marker.rotation.order = 'YXZ';
-      marker.rotation.set(pitch, angle, 0);
-      scene.add(marker);
+      const markerMatrix = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(pitch, angle, 0, 'YXZ'));
+      markerMatrix.setPosition(ax + dx * t, THREE.MathUtils.lerp(ay, by, t) + 0.15, az + dz * t);
+      markerTransforms.push(markerMatrix);
     }
 
     guardedSegmentSides.get(index)?.forEach((side) => {
@@ -137,6 +151,11 @@ export function addRoadSurface(scene: THREE.Scene) {
       });
     });
   });
+
+  const markers = new THREE.InstancedMesh(new THREE.BoxGeometry(0.16, 0.03, 4), markerMaterial, markerTransforms.length);
+  markerTransforms.forEach((matrix, index) => markers.setMatrixAt(index, matrix));
+  markers.instanceMatrix.needsUpdate = true;
+  scene.add(markers);
 
   const curbGeometry = new THREE.BoxGeometry(0.9, 0.1, 4.8);
   [[whiteCurbs, materials.curbWhite], [redCurbs, materials.curbRed]].forEach(([transforms, material]) => {

@@ -1,0 +1,108 @@
+.motion-ready .motion-reveal,
+.motion-ready .motion-fade {
+  opacity: 0;
+  transition: opacity 700ms cubic-bezier(.16, 1, .3, 1), transform 700ms cubic-bezier(.16, 1, .3, 1);
+  transition-delay: var(--motion-delay, 0ms);
+}
+
+.motion-ready .motion-reveal { transform: translateY(28px); }
+.motion-ready .motion-fade { filter: saturate(.7); }
+
+.motion-ready .motion-reveal.is-in-view,
+.motion-ready .motion-fade.is-in-view {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+.hero-copy-column > .hero-title.motion-reveal { transform: translateY(42px); }
+.hero-copy-column > .hero-title.motion-reveal.is-in-view { transform: none; }
+
+.hero-stage.motion-fade.is-in-view { transition-delay: 180ms; }
+.hero-stage.motion-fade { transition-property: opacity, filter; }
+
+.hero-topline-center i,
+.nav-status .status-dot {
+  animation: freelancer-pulse 2.2s ease-in-out infinite;
+}
+
+.stage-sun { animation: freelancer-breathe 4.5s ease-in-out infinite; }
+.stage-beam { animation: freelancer-scan 3.8s ease-in-out infinite; transform-origin: top; }
+.hero-scroll { animation: freelancer-nudge 2.8s ease-in-out infinite; }
+
+.service-card,
+.skill-block,
+.project-card,
+.timeline-entry,
+.education-row,
+.review-card {
+  position: relative;
+  transition: background 240ms ease, border-color 240ms ease, transform 420ms cubic-bezier(.16, 1, .3, 1), box-shadow 420ms ease;
+}
+
+.service-card:hover,
+.skill-block:hover,
+.project-card:hover,
+.timeline-entry:hover,
+.education-row:hover,
+.review-card:hover {
+  position: relative;
+  z-index: 1;
+  transform: translateY(-5px);
+  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, .16);
+}
+
+.service-card::after,
+.skill-block::after,
+.project-card::after {
+  position: absolute;
+  right: 1.2rem;
+  bottom: 1.2rem;
+  width: 0;
+  height: 1px;
+  background: var(--accent-primary);
+  content: "";
+  transition: width 360ms cubic-bezier(.16, 1, .3, 1);
+}
+
+.service-card:hover::after,
+.skill-block:hover::after,
+.project-card:hover::after { width: 2.5rem; }
+
+.skill-tag { transition: border-color 180ms ease, color 180ms ease, transform 180ms ease; }
+.skill-tag:hover { transform: translateY(-2px); }
+
+@keyframes freelancer-pulse {
+  0%, 100% { opacity: .55; box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-primary) 0%, transparent); }
+  50% { opacity: 1; box-shadow: 0 0 0 .35rem color-mix(in srgb, var(--accent-primary) 14%, transparent); }
+}
+
+@keyframes freelancer-breathe {
+  0%, 100% { transform: scale(.96); opacity: .14; }
+  50% { transform: scale(1.08); opacity: .24; }
+}
+
+@keyframes freelancer-scan {
+  0%, 100% { opacity: .25; transform: scaleY(.78); }
+  50% { opacity: .9; transform: scaleY(1); }
+}
+
+@keyframes freelancer-nudge {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-topline-center i,
+  .nav-status .status-dot,
+  .stage-sun,
+  .stage-beam,
+  .hero-scroll { animation: none; }
+
+  .service-card,
+  .skill-block,
+  .project-card,
+  .timeline-entry,
+  .education-row,
+  .review-card { transition: none; }
+}
