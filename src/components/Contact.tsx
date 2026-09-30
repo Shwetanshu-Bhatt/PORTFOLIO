@@ -21,7 +21,7 @@ export default function Contact() {
           name: values.get("name"),
           email: values.get("email"),
           message: values.get("message"),
-          website: values.get("website"),
+          faxNumber: values.get("faxNumber"),
         }),
       });
 
@@ -69,10 +69,10 @@ export default function Contact() {
             <label>
               What can I help with?
               <textarea name="message" rows={5} maxLength={5000} required />
-            </label>
-            <label className="contact-form-trap" aria-hidden="true">
+          </label>
+          <label className="contact-form-trap" aria-hidden="true">
               Leave this field empty
-              <input name="website" type="text" tabIndex={-1} autoComplete="off" />
+              <input name="faxNumber" type="text" tabIndex={-1} autoComplete="new-password" />
             </label>
             <div className="contact-form-footer">
               <p className="contact-form-status" aria-live="polite">
