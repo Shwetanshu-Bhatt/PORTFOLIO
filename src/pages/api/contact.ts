@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { personal } from "@/data";
+import nodemailer from "nodemailer";
 
 type ContactRequest = {
   name?: unknown;
@@ -28,28 +28,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: "Please provide a valid name, email address, and message." });
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.CONTACT_FROM_EMAIL;
-  if (!apiKey || !from) return res.status(503).json({ error: "Email delivery is not configured." });
+  const gmailUser = process.env.GMAIL_USER || "shwetanshubhatt@gmail.com";
+  const gmailAppPassword = process.env.GMAIL_APP_PASSWORD?.replace(/\s/g, "");
+  if (!gmailAppPassword) return res.status(503).json({ error: "Email delivery is not configured." });
 
   try {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: [process.env.CONTACT_TO_EMAIL || personal.email],
-        reply_to: cleanEmail,
-        subject: `Portfolio message from ${cleanName}`,
-        text: `Name: ${cleanName}\nEmail: ${cleanEmail}\n\n${cleanMessage}`,
-      }),
-      signal: AbortSignal.timeout(10000),
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: gmailUser, pass: gmailAppPassword },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
 
-    if (!response.ok) return res.status(502).json({ error: "Email provider could not accept the message." });
+    await transporter.sendMail({
+      from: { name: "Shwetanshu Bhatt", address: gmailUser },
+      to: gmailUser,
+      replyTo: cleanEmail,
+      subject: `Portfolio message from ${cleanName.replace(/[\r\n]+/g, " ")}`,
+      text: `Name: ${cleanName}\nEmail: ${cleanEmail}\n\n${cleanMessage}`,
+    });
+
     return res.status(200).json({ success: true });
   } catch {
     return res.status(502).json({ error: "Email delivery failed. Please try again." });

@@ -1,6 +1,5 @@
 import { FormEvent, useState } from "react";
 import { personal } from "@/data";
-import Link from "next/link";
 
 type SubmitState = "idle" | "sending" | "sent" | "error";
 
@@ -42,14 +41,9 @@ export default function Contact() {
           <div className="contact-intro">
             <h2 className="contact-heading">Make the hard part <em>boring.</em></h2>
             <div className="contact-details">
-              <span className="contact-kicker">Have a real problem to solve?</span>
+              <span className="contact-kicker">Prefer email?</span>
               <a className="contact-link" href={`mailto:${personal.email}`}>{personal.email}</a>
               <p className="contact-note">Tell me what is stuck, what is slow, or what needs to exist. I&apos;ll get back to you with a clear next step.</p>
-              <div className="local-service-links" aria-label="Development services in Dehradun">
-                <Link href="/#services">Freelance development</Link>
-                <Link href="/#services">Web development</Link>
-                <Link href="/#services">Backend development</Link>
-              </div>
               <div className="social-row">
                 <a href={personal.github} target="_blank" rel="noreferrer">GitHub ↗</a>
                 <a href={personal.linkedin} target="_blank" rel="noreferrer">LinkedIn ↗</a>
@@ -58,6 +52,10 @@ export default function Contact() {
           </div>
 
           <form className="contact-form" onSubmit={handleSubmit}>
+            <div className="contact-form-heading">
+              <span>MESSAGE / 01</span>
+              <h3>Start with the essentials.</h3>
+            </div>
             <div className="contact-form-row">
               <label>
                 Your name
