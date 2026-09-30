@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
-const DISPLAY_TIME = 3000;
-const EXIT_TIME = 520;
+const DISPLAY_TIME = 650;
+const EXIT_TIME = 280;
 
 export default function PortfolioPreloader() {
   const [phase, setPhase] = useState<"loading" | "exiting" | "hidden">("loading");
@@ -50,41 +50,15 @@ export default function PortfolioPreloader() {
   if (phase === "hidden") return null;
 
   return (
-    <div className={`portfolio-preloader portfolio-preloader--${phase}`} role="status" aria-label="Loading portfolio">
-      <div className="preloader-atmosphere" aria-hidden="true" />
-
-      <header className="preloader-header">
-        <span className="preloader-mark">SB<span>.</span></span>
-        <span>INDEPENDENT SOFTWARE ENGINEER</span>
-        <span>DEHRADUN / IN</span>
-      </header>
-
-      <main className="preloader-main">
-        <div className="preloader-lockup">
-          <p className="preloader-kicker"><i /> A PRACTICAL SOFTWARE PRACTICE</p>
-          <h1><span>SHWETANSHU</span><em>BHATT.</em></h1>
-          <div className="preloader-rule"><span /></div>
-          <p className="preloader-description">Websites, systems, and useful automation for the messy parts.</p>
-        </div>
-
-        <div className="preloader-stages" aria-hidden="true">
-          <div className="preloader-stage preloader-stage--one">
-            <span>01</span><strong>THINK</strong><small>Find the signal</small><b>↗</b>
-          </div>
-          <div className="preloader-stage preloader-stage--two">
-            <span>02</span><strong>BUILD</strong><small>Make it useful</small><b>↗</b>
-          </div>
-          <div className="preloader-stage preloader-stage--three">
-            <span>03</span><strong>SHIP</strong><small>Keep it calm</small><b>↗</b>
-          </div>
-          <div className="preloader-stage-line" />
-        </div>
+    <div className={`portfolio-preloader portfolio-preloader--${phase}`} role="status" aria-label="Preparing portfolio">
+      <main className="preloader-content">
+        <div className="preloader-mark" aria-hidden="true">SB<span>.</span></div>
+        <p className="preloader-kicker">INDEPENDENT SOFTWARE ENGINEER <i /> DEHRADUN, INDIA</p>
+        <h1>Shwetanshu <em>Bhatt</em></h1>
+        <p className="preloader-description">Reliable software, backend systems, and AI integrations.</p>
+        <div className="preloader-loading" aria-hidden="true"><span /></div>
+        <p className="preloader-status">Preparing selected work<span>PLEASE WAIT</span></p>
       </main>
-
-      <footer className="preloader-footer">
-        <div className="preloader-progress"><span /></div>
-        <div className="preloader-footer-copy"><span>LOADING SELECTED WORK</span><span>SOFTWARE · AI · AUTOMATION</span><span>SB / 26</span></div>
-      </footer>
     </div>
   );
 }
