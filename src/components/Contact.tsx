@@ -1,10 +1,16 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { personal } from "@/data";
 
 type SubmitState = "idle" | "sending" | "sent" | "error";
 
 export default function Contact() {
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
+
+  useEffect(() => {
+    if (submitState !== "sent") return;
+    const timer = window.setTimeout(() => setSubmitState("idle"), 5000);
+    return () => window.clearTimeout(timer);
+  }, [submitState]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -75,7 +81,7 @@ export default function Contact() {
               <input name="faxNumber" type="text" tabIndex={-1} autoComplete="new-password" />
             </label>
             <div className="contact-form-footer">
-              <p className="contact-form-status" aria-live="polite">
+              <p className={`contact-form-status${submitState === "sent" ? " is-success" : ""}`} aria-live="polite">
                 {submitState === "sent" && "Thanks — your message is on its way."}
                 {submitState === "error" && <>Couldn&apos;t send that just now. Email me at <a href={`mailto:${personal.email}`}>{personal.email}</a>.</>}
               </p>

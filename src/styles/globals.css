@@ -326,11 +326,14 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .contact-form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .contact-form label { display: grid; min-width: 0; gap: 0.55rem; color: var(--text-secondary); font-family: 'Courier New', Courier, monospace; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 .contact-form input, .contact-form textarea { width: 100%; min-width: 0; padding: 0.8rem 0.85rem; border: 1px solid var(--border-color); border-radius: 0; outline: none; color: var(--text-primary); background: var(--bg-primary); font: 400 0.9rem/1.55 Arial, Helvetica, sans-serif; letter-spacing: normal; text-transform: none; transition: border-color 160ms ease, box-shadow 160ms ease; }
-.contact-form textarea { min-height: 7.5rem; resize: vertical; }
+.contact-form textarea { height: 9rem; min-height: 9rem; max-height: 9rem; overflow-y: auto; overscroll-behavior: contain; resize: none; scrollbar-width: none; }
+.contact-form textarea::-webkit-scrollbar { display: none; width: 0; }
 .contact-form input:focus, .contact-form textarea:focus { border-color: var(--accent-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-primary) 18%, transparent); }
 .contact-form-trap { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .contact-form-footer { display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 1rem; }
 .contact-form-status { max-width: 22rem; margin: 0; color: var(--text-secondary); font-size: 0.78rem; line-height: 1.45; }
+.contact-form-status.is-success { color: #82cf97; }
+[data-theme="light"] .contact-form-status.is-success { color: #2f8050; }
 .contact-form-status a { color: var(--accent-primary); font-weight: 700; text-underline-offset: 0.2em; }
 .contact-submit { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; gap: 1.25rem; padding: 0 1rem; border: 1px solid var(--accent-primary); color: var(--ink); background: var(--accent-primary); cursor: pointer; font: 700 0.68rem 'Courier New', Courier, monospace; letter-spacing: 0.08em; text-transform: uppercase; transition: transform 160ms ease, opacity 160ms ease; }
 .contact-submit:hover { transform: translateY(-2px); }
