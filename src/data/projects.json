@@ -3,50 +3,42 @@
     {
       "id": "qa-engine",
       "title": "QA Engine",
-      "description": "Production-scale backend system to autonomously generate and validate technical MCQs. Reduced generation time by 90%.",
+      "description": "Backend system for automated technical MCQ generation and validation, cutting generation time by 90%.",
       "tech": ["Python", "PostgreSQL", "Asyncio", "Groq API", "OpenAI API", "Gemini API"],
       "link": "#",
-      "stats": ["90% Time Reduction", "Fault-Tolerant Pipeline"],
+      "stats": ["90% faster generation"],
       "featured": true,
       "image": ""
     },
     {
+      "id": "lahit-animal-welfare",
+      "title": "LAHIT Animal Welfare Platform",
+      "description": "Full-stack animal-welfare platform for rescue coordination, adoption, volunteering, and community support across Uttarakhand, with an admin portal for managing animals, rescues, content, and volunteer workflows.",
+      "tech": ["Next.js", "React", "MongoDB", "NextAuth.js", "Cloudinary", "Leaflet"],
+      "link": "https://lahitanimalwelfaregroup.com",
+      "stats": []
+    },
+    {
       "id": "ai-stock-predictor",
-      "title": "AI Stock Price Predictor Demo",
-      "description": "Machine learning model that predicts next-day open and close stock prices using historical OHLCV market data. Features data preprocessing, feature scaling, and model evaluation with MAE/RMSE metrics.",
-      "tech": ["Python", "Pandas", "Scikit-Learn", "Linear Regression", "Financial Data Analysis"],
+      "title": "Stock Price Forecasting Prototype",
+      "description": "Forecasts next-day open and close prices from historical OHLCV data, with feature scaling and MAE/RMSE evaluation.",
+      "tech": ["Python", "Pandas", "Scikit-Learn", "Linear Regression"],
       "link": "https://investwise-qunf.onrender.com/",
       "stats": []
     },
     {
       "id": "studysync",
       "title": "StudySync",
-      "description": "Full-stack collaborative learning platform with role-based system, real-time chat via WebSockets, file uploads to Cloudinary, and JWT authentication. Teachers upload notes, students browse by branch/year/semester.",
-      "tech": ["React", "Vite", "Tailwind CSS", "Node.js", "Express.js", "MongoDB", "Socket.io", "Cloudinary", "JWT"],
+      "description": "Collaborative learning platform with role-based access, real-time chat, and course-organized notes and file sharing.",
+      "tech": ["React", "Node.js", "Express.js", "MongoDB", "Socket.io", "Cloudinary"],
       "link": "https://studysync.apsgroupco.com/login",
       "stats": []
     },
     {
       "id": "haptic-hearing",
       "title": "Haptic Hearing System",
-      "description": "Wearable assistive technology that converts environmental sounds into vibration signals. System captures surrounding sound, processes signals to filter meaningful sounds, and provides directional feedback via two wristbands with vibration intensity representing distance/loudness.",
-      "tech": ["Arduino", "Embedded Systems", "Signal Processing", "Wearable Tech"],
-      "link": "#",
-      "stats": []
-    },
-    {
-      "id": "portfolio",
-      "title": "Portfolio Website",
-      "description": "Built responsive developer portfolio with modern UI and optimized performance.",
-      "tech": ["Next.js", "Tailwind CSS", "JavaScript"],
-      "link": "https://shwetanshubhatt.vercel.app/",
-      "stats": []
-    },
-    {
-      "id": "hostel-management",
-      "title": "Hostel Management System",
-      "description": "Backend system to manage hostels, rooms, and student records. Designed database schema and implemented backend logic.",
-      "tech": ["Spring Boot", "PostgreSQL", "Thymeleaf"],
+      "description": "Wearable assistive prototype that turns environmental sound into directional vibration cues, with intensity mapped to loudness and distance.",
+      "tech": ["Arduino", "Embedded Systems", "Signal Processing"],
       "link": "#",
       "stats": []
     }

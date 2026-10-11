@@ -56,13 +56,13 @@ export default function Home({ projects }: { projects: Project[] }) {
       <div className="site-shell">
         <Navbar />
         <main className="site-main">
-          <Hero />
+          <Hero featuredProject={projects.find(project => project.featured) || projects[0]} />
+          <Projects projects={projects} />
           <About />
           <Services />
           <Skills />
           <Experience />
           <Education />
-          <Projects projects={projects} />
           <Reviews />
           <Contact />
         </main>

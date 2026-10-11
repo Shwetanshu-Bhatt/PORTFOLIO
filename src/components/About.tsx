@@ -4,10 +4,10 @@ export default function About() {
       <div className="section-inner editorial-grid">
         <div className="section-index" aria-hidden="true">01</div>
         <div>
-          <div className="section-mark">About the work</div>
-          <h2 className="section-heading">Systems with a <em>point of view.</em></h2>
+          <div className="section-mark">How I think about the work</div>
+          <h2 className="section-heading">Happy paths are easy. <em>I design for what happens next.</em></h2>
           <p className="about-copy">
-            I&apos;m a <strong>backend developer and AI systems engineer</strong> who likes turning ambiguous ideas into dependable products. My strongest work lives where product thinking meets infrastructure: data models, job orchestration, APIs, and the little decisions that keep a system observable and recoverable.
+            I&apos;m a <strong>backend developer and AI systems engineer</strong> who turns fuzzy requirements into dependable workflows: clear data models, observable jobs, careful retries, and APIs that can grow with the product.
           </p>
           <div className="proof-grid" aria-label="Selected results">
             <div className="proof-item"><span className="proof-value">90%</span><span className="proof-label">faster generation time</span></div>

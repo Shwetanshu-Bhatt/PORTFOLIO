@@ -2,7 +2,7 @@ import { Html, Head, Main, NextScript } from "next/document";
 
 export default function Document() {
   return (
-    <Html lang="en">
+    <Html lang="en" data-theme="light">
       <Head>
         <link rel="icon" href="/logo.svg" type="image/svg+xml" />
         {/* Google Site Verification - Required for Google Search Console */}

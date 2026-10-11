@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
-const DISPLAY_TIME = 650;
-const EXIT_TIME = 280;
+const DISPLAY_TIME = 900;
+const EXIT_TIME = 360;
 
 export default function PortfolioPreloader() {
   const [phase, setPhase] = useState<"loading" | "exiting" | "hidden">("loading");
@@ -19,6 +19,13 @@ export default function PortfolioPreloader() {
       document.body.style.overflow = previousOverflow;
     };
 
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      restoreBody();
+      setPhase("hidden");
+      window.requestAnimationFrame(() => window.dispatchEvent(new Event("portfolio:ready")));
+      return restoreBody;
+    }
+
     const finish = () => {
       if (finished) return;
       finished = true;
@@ -29,6 +36,7 @@ export default function PortfolioPreloader() {
         hideTimer = window.setTimeout(() => {
           restoreBody();
           setPhase("hidden");
+          window.requestAnimationFrame(() => window.dispatchEvent(new Event("portfolio:ready")));
         }, EXIT_TIME);
       }, wait);
     };
@@ -50,14 +58,19 @@ export default function PortfolioPreloader() {
   if (phase === "hidden") return null;
 
   return (
-    <div className={`portfolio-preloader portfolio-preloader--${phase}`} role="status" aria-label="Preparing portfolio">
+    <div className={`portfolio-preloader portfolio-preloader--${phase}`} role="status" aria-label="Preparing Shwetanshu Bhatt’s portfolio">
       <main className="preloader-content">
-        <div className="preloader-mark" aria-hidden="true">SB<span>.</span></div>
-        <p className="preloader-kicker">INDEPENDENT SOFTWARE ENGINEER <i /> DEHRADUN, INDIA</p>
-        <h1>Shwetanshu <em>Bhatt</em></h1>
-        <p className="preloader-description">Reliable software, backend systems, and AI integrations.</p>
+        <div className="preloader-kicker"><span>SB / SYSTEMS FIELD MANUAL</span><span>DEHRADUN · INDIA</span></div>
+        <h1>The work behind your product <em>should just work.</em></h1>
+        <p className="preloader-description">{phase === "exiting" ? "SYSTEM READY / OPENING PORTFOLIO" : "MAPPING REQUESTS · CHECKING FAILURES · BUILDING THE VIEW"}</p>
+        <div className="preloader-pipeline" aria-hidden="true">
+          <span><i>01</i> REQUEST</span><b />
+          <span><i>02</i> BUILD</span><b />
+          <span><i>03</i> VALIDATE</span><b />
+          <span><i>04</i> READY</span>
+        </div>
         <div className="preloader-loading" aria-hidden="true"><span /></div>
-        <p className="preloader-status">Preparing selected work<span>PLEASE WAIT</span></p>
+        <p className="preloader-status"><span>STARTUP SEQUENCE</span><span>FIELD NOTE / 001</span></p>
       </main>
     </div>
   );

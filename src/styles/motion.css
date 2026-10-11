@@ -1,11 +1,12 @@
 .motion-ready .motion-reveal,
 .motion-ready .motion-fade {
   opacity: 0;
-  transition: opacity 700ms cubic-bezier(.16, 1, .3, 1), transform 700ms cubic-bezier(.16, 1, .3, 1);
+  filter: blur(5px);
+  transition: opacity 760ms cubic-bezier(.16, 1, .3, 1), transform 760ms cubic-bezier(.16, 1, .3, 1), filter 760ms cubic-bezier(.16, 1, .3, 1);
   transition-delay: var(--motion-delay, 0ms);
 }
 
-.motion-ready .motion-reveal { transform: translateY(28px); }
+.motion-ready .motion-reveal { transform: translateY(30px); }
 .motion-ready .motion-fade { filter: saturate(.7); }
 
 .motion-ready .motion-reveal.is-in-view,
@@ -14,6 +15,13 @@
   transform: none;
   filter: none;
 }
+
+.motion-ready .field-hero .field-kicker.motion-reveal { transform: translateY(5px); }
+.motion-ready .field-hero .field-hero-copy > h1.motion-reveal { transform: translateY(12px); }
+.motion-ready .field-hero .field-intro.motion-reveal,
+.motion-ready .field-hero .field-actions.motion-reveal,
+.motion-ready .field-hero .field-capabilities.motion-reveal { transform: translateY(10px); }
+.motion-ready .field-hero .system-sheet.motion-reveal { transition-delay: 220ms; }
 
 .hero-copy-column > .hero-title.motion-reveal { transform: translateY(42px); }
 .hero-copy-column > .hero-title.motion-reveal.is-in-view { transform: none; }

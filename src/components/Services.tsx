@@ -1,27 +1,27 @@
 const services = [
   {
     title: "Websites & web applications",
-    description: "Responsive business websites, portfolios, landing pages, dashboards, portals, booking flows, and custom web applications built with modern frontend technology.",
+    description: "Fast, responsive websites and web apps, with the flows and details that make them useful.",
   },
   {
     title: "Full-stack development",
-    description: "End-to-end product development with React, Next.js, JavaScript, TypeScript, Node.js, Python, secure authentication, APIs, and production deployment.",
+    description: "Product work across React, Next.js, TypeScript, Node.js, and Python, from the first screen through production.",
   },
   {
     title: "Backend & API engineering",
-    description: "Reliable REST APIs, database design, integrations, background jobs, queues, webhooks, performance improvements, and maintainable server-side systems.",
+    description: "APIs, integrations, background jobs, queues, and webhooks designed to stay observable and recover cleanly.",
   },
   {
     title: "Database development",
-    description: "PostgreSQL and SQL schema design, migrations, data integrity, query optimization, reporting pipelines, and dependable application persistence.",
+    description: "PostgreSQL schema design, migrations, query tuning, and the constraints that keep important data consistent.",
   },
   {
     title: "AI integration & automation",
-    description: "Practical OpenAI, Gemini, and Groq integrations, document workflows, retrieval, structured outputs, business automation, validation, and human review paths.",
+    description: "Useful model integrations with structured outputs, validation, retries, and human review where it matters.",
   },
   {
     title: "Cloud & product delivery",
-    description: "Docker-based delivery, Linux environments, Git workflows, cloud-ready architecture, technical SEO, performance, accessibility, monitoring, and launch support.",
+    description: "Deployment, performance, accessibility, monitoring, technical SEO, and the practical work around launch.",
   },
 ];
 
@@ -31,10 +31,10 @@ export default function Services() {
       <div className="section-inner editorial-grid">
         <div className="section-index" aria-hidden="true">02</div>
         <div>
-          <div className="section-mark">Software development services</div>
-          <h2 className="section-heading">Freelance developer in <em>Dehradun.</em></h2>
+          <div className="section-mark">What I can take off your plate</div>
+          <h2 className="section-heading">From the first screen to <em>the last retry.</em></h2>
           <p className="services-intro">
-            I&apos;m a freelance software developer, web developer, full-stack developer, backend developer, and AI engineer based in Dehradun, Uttarakhand. I work with startups, businesses, and remote teams across India to design, build, improve, and maintain dependable digital products.
+            Work directly with an independent software developer in Dehradun. I partner with startups, businesses, and remote teams across India to design, build, and improve dependable digital products.
           </p>
           <div className="service-grid">
             {services.map((service, index) => (

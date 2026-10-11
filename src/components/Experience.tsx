@@ -6,8 +6,8 @@ export default function Experience() {
       <div className="section-inner editorial-grid">
         <div className="section-index" aria-hidden="true">04</div>
         <div>
-          <div className="section-mark">Experience</div>
-          <h2 className="section-heading">Proof, not <em>promises.</em></h2>
+          <div className="section-mark">Experience / 01</div>
+          <h2 className="section-heading">One shipped system. <em>A lot of careful work.</em></h2>
           <div className="timeline">
             {experience.experiences.map((item) => (
               <article className="timeline-entry" key={item.id}>

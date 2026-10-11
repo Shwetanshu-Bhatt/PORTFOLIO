@@ -1,91 +1,65 @@
-"use client";
-
 import Image from "next/image";
-import Link from "next/link";
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react";
-import { personal } from "@/data";
+import { personal, type Project } from "@/data";
 
-export default function Hero() {
-  const stageRef = useRef<HTMLDivElement>(null);
-  const [pointer, setPointer] = useState({ x: 0, y: 0 });
+const pipeline = [
+  { id: "01", label: "Request", note: "Define the job", className: "pipeline-request" },
+  { id: "02", label: "Queue", note: "Hold the state", className: "pipeline-queue" },
+  { id: "03", label: "Generate", note: "Use the right model", className: "pipeline-model" },
+  { id: "04", label: "Validate", note: "Catch weak output", className: "pipeline-validate" },
+];
 
-  useEffect(() => {
-    const stage = stageRef.current;
-    if (!stage) return;
-
-    const resetPointer = () => setPointer({ x: 0, y: 0 });
-    stage.addEventListener("pointerleave", resetPointer);
-    return () => stage.removeEventListener("pointerleave", resetPointer);
-  }, []);
-
-  const handleStagePointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    setPointer({
-      x: ((event.clientX - bounds.left) / bounds.width - 0.5) * 2,
-      y: ((event.clientY - bounds.top) / bounds.height - 0.5) * 2,
-    });
-  };
-
-  const stageStyle = {
-    "--pointer-x": `${pointer.x}`,
-    "--pointer-y": `${pointer.y}`,
-  } as CSSProperties;
+export default function Hero({ featuredProject }: { featuredProject?: Project }) {
+  const featuredStat = featuredProject?.stats[0] || "";
+  const metricMatch = featuredStat.match(/^(\d+(?:\.\d+)?%?|\d+×)\s*(.*)$/i);
+  const metricValue = metricMatch?.[1] || "FIELD";
+  const metricLabel = metricMatch?.[2] || featuredStat || "SYSTEM NOTE";
+  const featuredTitle = featuredProject?.title || "Featured system";
 
   return (
-    <section className="site-section hero-section hero-experience" id="hero">
-      <div className="hero-topline" aria-hidden="true">
-        <span>Field notes / 001</span>
-        <span className="hero-topline-center"><i /> System online</span>
-        <span>Scroll to deploy ↓</span>
-      </div>
-
-      <div className="section-inner hero-grid hero-experience-grid">
-        <div className="hero-copy-column">
-          <p className="eyebrow">Independent software engineer / Dehradun, IN</p>
-          <h1 className="hero-title">
-            <span>Build</span>
-            <span className="outline">the</span>
-            <span className="accent-line">hard part.</span>
-          </h1>
-          <div className="hero-copy">
-            <div className="hero-copy-line" aria-hidden="true" />
-            <p>{personal.description} I care about the seams: failure states, useful abstractions, and software that stays calm under load.</p>
+    <section className="site-section hero-section field-hero" id="hero">
+      <div className="section-inner field-hero-inner">
+        <div className="field-hero-copy">
+          <p className="field-kicker"><span>Freelance software engineer</span><i /> Dehradun, India</p>
+          <h1>The work behind your product should <em>just work.</em></h1>
+          <p className="field-intro">I build the web apps, backend systems, and practical AI workflows that turn complicated ideas into dependable products.</p>
+          <div className="field-actions">
+            <a className="field-button field-button-primary" href="#projects">See the systems I&apos;ve built <span aria-hidden="true">↘</span></a>
+            <a className="field-text-link" href={`mailto:${personal.email}`}>Have a problem to solve? <span aria-hidden="true">↗</span></a>
           </div>
-          <div className="hero-actions">
-            <a className="button-primary" href="#projects">Explore selected work <span className="button-arrow">↘</span></a>
-            <Link className="button-ghost" href="/world">Enter 3D World <span className="button-arrow"></span></Link>
-            <a className="button-ghost" href={`mailto:${personal.email}`}>Start a conversation</a>
-          </div>
-          <div className="hero-signal-row" aria-label="Specialties">
-            <span><i /> Python / backend</span>
-            <span><i /> AI integrations</span>
-            <span><i /> Production calm</span>
+          <div className="field-capabilities" aria-label="Areas of work">
+            <span>Backend & APIs</span><span>AI workflows</span><span>Web products</span>
           </div>
         </div>
 
-        <div
-          ref={stageRef}
-          className="hero-stage"
-          style={stageStyle}
-          onPointerMove={handleStagePointerMove}
-          aria-label="Interactive systems map"
-        >
-          <div className="stage-sun" aria-hidden="true" />
-
-          <div className="stage-profile-card">
-            <div className="stage-profile-top"><span>Profile / 001</span><strong>Available</strong></div>
-            <div className="stage-profile-image">
-              <Image src="/images/profile.png" alt={personal.name} width={425} height={587} priority />
-              <div className="stage-profile-caption">
-                <strong>Shwetanshu<br />Bhatt</strong>
-                <span>Backend<br />+ AI systems</span>
+        <div className="system-sheet" role="img" aria-label={`A resilient ${featuredTitle} pipeline, from request through validation and recovery`}>
+          <div className="system-sheet-head">
+            <span><i /> SYSTEM NOTE / 001</span><span>BUILT TO RECOVER</span>
+          </div>
+          <div className="pipeline-map" aria-hidden="true">
+            <svg className="pipeline-wires" viewBox="0 0 640 360" preserveAspectRatio="none">
+              <path className="pipeline-wire" d="M72 112 H570" />
+              <path className="pipeline-wire pipeline-wire-return" d="M493 145 V250 H345 V148" />
+              <path className="pipeline-wire pipeline-wire-output" d="M570 112 H608 V300 H390" />
+              <circle cx="72" cy="112" r="5" /><circle cx="570" cy="112" r="5" /><circle cx="390" cy="300" r="5" />
+            </svg>
+            {pipeline.map((step) => (
+              <div className={`pipeline-node ${step.className}`} key={step.id}>
+                <span>{step.id} / {step.label}</span><strong>{step.note}</strong>
               </div>
-            </div>
-            <div className="stage-profile-bottom"><span>Currently building</span><strong>Reliable things</strong></div>
+            ))}
+            <span className="pipeline-branch-label">INVALID? RETRY WITH CONTEXT ↶</span>
+            <span className="pipeline-output"><i /> ACCEPTED OUTPUT</span>
+            <div className="pipeline-proof"><span>{featuredTitle.toUpperCase()} / RESULT</span><strong>{metricValue}</strong><small>{metricLabel}</small></div>
+            <span className="pipeline-coordinate">DEHRADUN / IST</span>
+          </div>
+          <div className="system-sheet-foot">
+            <Image src="/images/profile.png" alt="" width={40} height={40} />
+            <span><strong>Shwetanshu Bhatt</strong><small>Backend · AI · Product engineering</small></span>
+            <span className="sheet-stamp">FIELD<br />TESTED</span>
           </div>
         </div>
       </div>
-
+      <div className="field-hero-index" aria-hidden="true">SB / 26</div>
     </section>
   );
 }

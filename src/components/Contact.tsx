@@ -42,14 +42,14 @@ export default function Contact() {
   return (
     <section className="site-section contact-section" id="contact">
       <div className="section-inner">
-        <div className="section-mark">Next / Let&apos;s work</div>
+        <div className="section-mark">Your turn / Start here</div>
         <div className="contact-grid">
           <div className="contact-intro">
-            <h2 className="contact-heading">Make the hard part <em>boring.</em></h2>
+            <h2 className="contact-heading">Have a system problem? <em>Let&apos;s trace it.</em></h2>
             <div className="contact-details">
               <span className="contact-kicker">Prefer email?</span>
               <a className="contact-link" href={`mailto:${personal.email}`}>{personal.email}</a>
-              <p className="contact-note">Tell me what is stuck, what is slow, or what needs to exist. I&apos;ll get back to you with a clear next step.</p>
+              <p className="contact-note">Share what needs to exist, what is failing, or what is taking too long. I&apos;ll reply with a clear next step.</p>
               <div className="social-row">
                 <a href={personal.github} target="_blank" rel="noreferrer">GitHub ↗</a>
                 <a href={personal.linkedin} target="_blank" rel="noreferrer">LinkedIn ↗</a>
@@ -60,7 +60,7 @@ export default function Contact() {
           <form className="contact-form" onSubmit={handleSubmit}>
             <div className="contact-form-heading">
               <span>MESSAGE / 01</span>
-              <h3>Start with the essentials.</h3>
+              <h3>Give me the messy version.</h3>
             </div>
             <div className="contact-form-row">
               <label>
