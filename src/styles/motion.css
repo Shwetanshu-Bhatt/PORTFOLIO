@@ -1,19 +1,17 @@
 .motion-ready .motion-reveal,
 .motion-ready .motion-fade {
   opacity: 0;
-  filter: blur(5px);
-  transition: opacity 760ms cubic-bezier(.16, 1, .3, 1), transform 760ms cubic-bezier(.16, 1, .3, 1), filter 760ms cubic-bezier(.16, 1, .3, 1);
+  transition: opacity 620ms cubic-bezier(.16, 1, .3, 1), transform 720ms cubic-bezier(.16, 1, .3, 1);
   transition-delay: var(--motion-delay, 0ms);
 }
 
-.motion-ready .motion-reveal { transform: translateY(30px); }
-.motion-ready .motion-fade { filter: saturate(.7); }
+.motion-ready .motion-reveal { transform: translateY(22px); }
+.motion-ready .motion-fade { transform: scale(.985); }
 
 .motion-ready .motion-reveal.is-in-view,
 .motion-ready .motion-fade.is-in-view {
   opacity: 1;
   transform: none;
-  filter: none;
 }
 
 .motion-ready .field-hero .field-kicker.motion-reveal { transform: translateY(5px); }
@@ -22,6 +20,15 @@
 .motion-ready .field-hero .field-actions.motion-reveal,
 .motion-ready .field-hero .field-capabilities.motion-reveal { transform: translateY(10px); }
 .motion-ready .field-hero .system-sheet.motion-reveal { transition-delay: 220ms; }
+.motion-ready .field-hero h1.motion-reveal.is-in-view > span { animation: field-line-rise 620ms cubic-bezier(.16, 1, .3, 1) both; }
+.motion-ready .field-hero h1.motion-reveal.is-in-view > span:nth-child(2) { animation-delay: 110ms; }
+.motion-ready .field-hero h1.motion-reveal.is-in-view > span:nth-child(3) { animation-delay: 220ms; }
+
+.section-mark::before { transform: scaleX(.55); transform-origin: left; transition: transform 520ms cubic-bezier(.16, 1, .3, 1); }
+.section-mark.motion-reveal.is-in-view::before { transform: scaleX(1); }
+
+.system-sheet-head i { animation: system-status 2.8s ease-in-out infinite; }
+.pipeline-output i { animation: system-status 2.2s ease-in-out infinite reverse; }
 
 .hero-copy-column > .hero-title.motion-reveal { transform: translateY(42px); }
 .hero-copy-column > .hero-title.motion-reveal.is-in-view { transform: none; }
@@ -56,8 +63,8 @@
 .review-card:hover {
   position: relative;
   z-index: 1;
-  transform: translateY(-5px);
-  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, .16);
+  transform: translateY(-4px);
+  box-shadow: 4px 4px 0 #050705;
 }
 
 .service-card::after,
@@ -80,9 +87,28 @@
 .skill-tag { transition: border-color 180ms ease, color 180ms ease, transform 180ms ease; }
 .skill-tag:hover { transform: translateY(-2px); }
 
+.motion-ready .hero-portrait { clip-path: inset(0 0 100% 0); transition: clip-path 900ms cubic-bezier(.16, 1, .3, 1); }
+.hero-visual.is-in-view .hero-portrait { clip-path: inset(0); }
+.motion-ready .hero-portrait-stage::before { transform: scaleX(.02); transform-origin: right; transition: transform 820ms cubic-bezier(.16, 1, .3, 1); }
+.hero-visual.is-in-view .hero-portrait-stage::before { transform: scaleX(1); }
+.motion-ready .hero-portrait-stage::after { transform: scaleY(.02); transform-origin: bottom; transition: transform 760ms cubic-bezier(.16, 1, .3, 1) 100ms; }
+.hero-visual.is-in-view .hero-portrait-stage::after { transform: scaleY(1); }
+.motion-ready .hero-proof-card { opacity: 0; transform: translateY(10px); transition: opacity 420ms ease 280ms, transform 520ms cubic-bezier(.16, 1, .3, 1) 280ms; }
+.hero-visual.is-in-view .hero-proof-card { opacity: 1; transform: none; }
+
 @keyframes freelancer-pulse {
-  0%, 100% { opacity: .55; box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-primary) 0%, transparent); }
-  50% { opacity: 1; box-shadow: 0 0 0 .35rem color-mix(in srgb, var(--accent-primary) 14%, transparent); }
+  0%, 100% { opacity: .65; transform: scale(.92); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+@keyframes system-status {
+  0%, 100% { opacity: .68; transform: scale(.92); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+@keyframes field-line-rise {
+  from { opacity: 0; transform: translateY(.6em); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes freelancer-breathe {
@@ -101,11 +127,24 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .motion-ready .motion-reveal,
+  .motion-ready .motion-fade,
+  .motion-ready .field-hero h1.motion-reveal.is-in-view > span {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
   .hero-topline-center i,
   .nav-status .status-dot,
   .stage-sun,
   .stage-beam,
-  .hero-scroll { animation: none; }
+  .hero-scroll,
+  .system-sheet-head i,
+  .pipeline-output i { animation: none; }
+
+  .section-mark::before { transform: none; transition: none; }
 
   .service-card,
   .skill-block,
@@ -113,4 +152,17 @@
   .timeline-entry,
   .education-row,
   .review-card { transition: none; }
+
+  .motion-ready .hero-portrait,
+  .motion-ready .hero-portrait-stage::before,
+  .motion-ready .hero-portrait-stage::after,
+  .motion-ready .hero-proof-card { clip-path: none; opacity: 1; transform: none; transition: none; }
+
+  .service-card:hover,
+  .skill-block:hover,
+  .project-card:hover,
+  .timeline-entry:hover,
+  .education-row:hover,
+  .review-card:hover,
+  .skill-tag:hover { transform: none; box-shadow: none; }
 }

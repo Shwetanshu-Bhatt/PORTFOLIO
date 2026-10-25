@@ -1,0 +1,76 @@
+{
+  "documents": [
+    {
+      "id": "profile-and-scope",
+      "title": "Freelance profile and location",
+      "keywords": ["about", "who", "what", "freelance", "developer", "software", "location", "Dehradun", "India", "remote", "work"],
+      "content": "I'm Shwetanshu Bhatt, an independent freelance software developer based in Dehradun, Uttarakhand, India. I work directly with startups, businesses, and remote teams across India to design, build, and improve dependable digital products. My work focuses on web products, full-stack and backend systems, APIs, databases, AI integration, and automation."
+    },
+    {
+      "id": "services-web-fullstack",
+      "title": "Websites and full-stack development",
+      "keywords": ["website", "websites", "web", "application", "app", "frontend", "full-stack", "fullstack", "React", "Next.js", "TypeScript", "responsive", "design", "build"],
+      "content": "I build responsive websites and web applications, and work across the full stack with React, Next.js, TypeScript, Node.js, and Python. I can take on the user-facing screens and the flows that connect them to backend services."
+    },
+    {
+      "id": "services-backend-data",
+      "title": "Backend, APIs, and databases",
+      "keywords": ["backend", "API", "REST", "database", "PostgreSQL", "MongoDB", "schema", "migration", "query", "queue", "background", "job", "webhook", "integration", "reliable", "system"],
+      "content": "I work on REST APIs, integrations, background jobs, queues, and webhooks. On the data side, I handle PostgreSQL schema design, migrations, query tuning, data modeling, and consistency constraints. My tools include Node.js, Express.js, Python, Asyncio, PostgreSQL, and MongoDB."
+    },
+    {
+      "id": "services-ai-delivery",
+      "title": "AI integration and product delivery",
+      "keywords": ["AI", "artificial intelligence", "automation", "model", "Groq", "OpenAI", "Gemini", "prompt", "structured", "validation", "retry", "deployment", "cloud", "performance", "accessibility", "SEO", "monitoring"],
+      "content": "I build practical AI integrations and automation with the OpenAI, Groq, and Gemini APIs, using structured outputs, validation, correction, retries, and human review where appropriate. I can also help with deployment, performance, accessibility, monitoring, and technical SEO."
+    },
+    {
+      "id": "project-qa-engine",
+      "title": "QA Engine project",
+      "keywords": ["QA", "quality", "engine", "MCQ", "question", "generation", "validation", "Python", "PostgreSQL", "Asyncio", "90", "percent", "faster", "Groq", "OpenAI", "Gemini", "project"],
+      "content": "QA Engine is an internal backend system I worked on to automate technical multiple-choice question generation and validation. The project reports a 90% reduction in generation time. I worked with Python, PostgreSQL, Asyncio, and the Groq, OpenAI, and Gemini APIs, and focused on lease-based locking, crash recovery, deterministic IDs, retries, and validation."
+    },
+    {
+      "id": "experience",
+      "title": "Relevant software engineering experience",
+      "keywords": ["experience", "intern", "current", "ongoing", "July", "2026", "backend", "production", "workflow", "locking", "recovery", "retry"],
+      "content": "My currently listed Software Engineering Intern role runs from July 2026 to Present. My work includes backend systems with Python and PostgreSQL, automated QA workflows, lease-based locking, crash recovery, deterministic IDs, retry pipelines, and multi-provider AI validation. This is employment experience, not a freelance client engagement."
+    },
+    {
+      "id": "project-lahit",
+      "title": "LAHIT Animal Welfare Platform project",
+      "keywords": ["LAHIT", "animal", "welfare", "rescue", "adoption", "volunteer", "community", "Uttarakhand", "admin", "portal", "Next.js", "MongoDB", "project"],
+      "content": "LAHIT Animal Welfare Platform is a full-stack platform for rescue coordination, adoption, volunteering, and community support across Uttarakhand. It includes an admin portal for managing animals, rescues, content, and volunteer workflows. Listed technologies include Next.js, React, MongoDB, NextAuth.js, Cloudinary, and Leaflet. Public project link: https://lahitanimalwelfaregroup.com"
+    },
+    {
+      "id": "project-morrow",
+      "title": "Morrow Dental Clinic website concept",
+      "keywords": ["Morrow", "dental", "clinic", "dentist", "website", "appointment", "WhatsApp", "tooth", "treatment", "concept", "demo", "project"],
+      "content": "Morrow Dental Clinic Website Concept is a clinic-first website concept with appointment and WhatsApp enquiry flows, treatment information, and an interactive tooth-care explainer. Clinic and provider details are placeholders for the demo, so do not present them as verified real-world details. Listed technologies include Next.js, React, and TypeScript. Public demo: https://morrow-dental-clinic.vercel.app/"
+    },
+    {
+      "id": "other-projects",
+      "title": "Other portfolio projects",
+      "keywords": ["Haptic", "hearing", "assistive", "wearable", "Arduino", "sound", "vibration", "stock", "forecasting", "prediction", "StudySync", "learning", "chat", "project", "projects"],
+      "content": "Other public projects include: Haptic Hearing System, a wearable assistive prototype that turns environmental sound into directional vibration cues; Stock Price Forecasting Prototype, which forecasts next-day open and close prices from historical OHLCV data and evaluates MAE/RMSE; and StudySync, a collaborative learning platform with role-based access, real-time chat, and course-organized notes and file sharing."
+    },
+    {
+      "id": "skills",
+      "title": "Portfolio-listed skills",
+      "keywords": ["skill", "skills", "technology", "technologies", "stack", "language", "Python", "TypeScript", "JavaScript", "C++", "SQL", "React", "Next.js", "Node.js", "Express", "PostgreSQL", "MongoDB", "Docker", "Linux", "Git", "AI", "system design"],
+      "content": "Portfolio-listed skills include Python, TypeScript, JavaScript, C++, SQL, React, Next.js, Tailwind CSS, Node.js, Express.js, REST APIs, PostgreSQL, MongoDB, Docker, Linux, Git, AI APIs, structured outputs, validation and correction, concurrency control, retries, crash recovery, deployment, performance, monitoring, accessibility, and technical SEO."
+    },
+    {
+      "id": "pricing-and-availability",
+      "title": "Pricing, availability, and timelines",
+      "keywords": ["price", "pricing", "rate", "rates", "cost", "budget", "fee", "fees", "quote", "estimate", "availability", "available", "timeline", "timelines", "duration", "start", "hire", "years", "experience"],
+      "content": "I don't publish fixed rates, current availability, delivery timelines, or a total number of years of experience. Those depend on the project and its scope. Invite the visitor to email me a short brief so I can suggest the right next step."
+    },
+    {
+      "id": "contact",
+      "title": "Contact and public profiles",
+      "keywords": ["contact", "email", "reach", "message", "hire", "start", "project", "GitHub", "LinkedIn", "connect"],
+      "content": "For a project enquiry, email me at shwetanshubhatt@gmail.com. You can tell me what you need built, what is failing, or what is taking too long. My public profiles are GitHub at https://github.com/Shwetanshu-Bhatt and LinkedIn at https://www.linkedin.com/in/shwetanshu-bhatt-082167257/."
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import Projects from "@/components/Projects";
 import Reviews from "@/components/Reviews";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
+import PortfolioAssistant from "@/components/PortfolioAssistant";
 import type { GetServerSideProps } from 'next';
 import type { Project } from '@/data';
 import { loadPortfolioData } from '@/lib/portfolio-content';
@@ -68,6 +69,7 @@ export default function Home({ projects }: { projects: Project[] }) {
         </main>
         <Footer />
       </div>
+      <PortfolioAssistant />
     </>
   );
 }

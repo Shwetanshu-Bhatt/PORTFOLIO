@@ -6,7 +6,7 @@ const MOTION_SELECTOR = [
   ".field-intro",
   ".field-actions",
   ".field-capabilities",
-  ".system-sheet",
+  ".hero-visual",
   ".hero-topline",
   ".hero-copy-column > .eyebrow",
   ".hero-title",
@@ -16,6 +16,7 @@ const MOTION_SELECTOR = [
   ".hero-stage",
   ".hero-scroll",
   ".site-section:not(.hero-section) .section-mark",
+  ".section-index",
   ".site-section:not(.hero-section) .section-heading",
   ".about-copy",
   ".proof-item",
@@ -44,9 +45,16 @@ export default function MotionController() {
         [".field-intro", 260],
         [".field-actions", 370],
         [".field-capabilities", 470],
-        [".system-sheet", 220],
+        [".hero-visual", 220],
       ] as const;
       root.classList.add("motion-ready");
+
+      const updatePageProgress = () => {
+        const scrollableHeight = root.scrollHeight - window.innerHeight;
+        const progress = scrollableHeight > 0 ? window.scrollY / scrollableHeight : 0;
+        document.querySelector<HTMLElement>(".site-shell")?.style.setProperty("--page-progress", `${Math.min(Math.max(progress, 0), 1) * 100}%`);
+      };
+      updatePageProgress();
 
       items.forEach((item, index) => {
         item.classList.add(item.matches(".hero-stage") ? "motion-fade" : "motion-reveal");
@@ -56,7 +64,14 @@ export default function MotionController() {
 
       if (reducedMotion) {
         items.forEach((item) => item.classList.add("is-in-view"));
-        return () => root.classList.remove("motion-ready");
+        window.addEventListener("scroll", updatePageProgress, { passive: true });
+        window.addEventListener("resize", updatePageProgress, { passive: true });
+        return () => {
+          window.removeEventListener("scroll", updatePageProgress);
+          window.removeEventListener("resize", updatePageProgress);
+          root.classList.remove("motion-ready");
+          document.querySelector<HTMLElement>(".site-shell")?.style.removeProperty("--page-progress");
+        };
       }
 
       const observer = new IntersectionObserver(
@@ -81,16 +96,23 @@ export default function MotionController() {
         });
       };
       const handleHashChange = () => window.requestAnimationFrame(revealVisibleItems);
+      const handleScroll = () => {
+        revealVisibleItems();
+        updatePageProgress();
+      };
 
       items.forEach((item) => observer.observe(item));
-      window.addEventListener("scroll", revealVisibleItems, { passive: true });
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      window.addEventListener("resize", updatePageProgress, { passive: true });
       window.addEventListener("hashchange", handleHashChange);
       revealVisibleItems();
       return () => {
         observer.disconnect();
-        window.removeEventListener("scroll", revealVisibleItems);
+        window.removeEventListener("scroll", handleScroll);
+        window.removeEventListener("resize", updatePageProgress);
         window.removeEventListener("hashchange", handleHashChange);
         root.classList.remove("motion-ready");
+        document.querySelector<HTMLElement>(".site-shell")?.style.removeProperty("--page-progress");
       };
     };
 
