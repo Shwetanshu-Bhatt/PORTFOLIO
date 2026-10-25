@@ -92,7 +92,7 @@ const servicePages: Record<string, ServicePage> = {
 export default function ServicePage({ slug }: { slug: string }) {
   const page = servicePages[slug];
   const canonical = `${SITE_URL}/${slug}/`;
-  const relatedPages = Object.entries(servicePages).filter(([key]) => key !== slug).slice(0, 3);
+  const relatedPages = Object.entries(servicePages).filter(([key]) => key !== slug);
   const schema = {
     '@context': 'https://schema.org',
     '@graph': [

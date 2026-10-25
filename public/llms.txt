@@ -8,10 +8,10 @@
 - Role: Freelance software developer, backend developer, and AI systems engineer
 - Location: Dehradun, Uttarakhand, India
 - Service area: Dehradun, Uttarakhand, India, and remote teams worldwide
-- Contact: shwetanshubhatt@gmail.com
-- Primary site: https://shwetanshubhatt.sifakalabs.in/
-- GitHub: https://github.com/Shwetanshu-Bhatt
-- LinkedIn: https://www.linkedin.com/in/shwetanshu-bhatt-082167257/
+- Contact: [shwetanshubhatt@gmail.com](mailto:shwetanshubhatt@gmail.com)
+- Primary site: [Freelance portfolio](https://shwetanshubhatt.sifakalabs.in/)
+- GitHub: [Shwetanshu Bhatt](https://github.com/Shwetanshu-Bhatt)
+- LinkedIn: [Shwetanshu Bhatt](https://www.linkedin.com/in/shwetanshu-bhatt-082167257/)
 
 Shwetanshu helps startups, businesses, and remote teams design, build, improve, and maintain dependable digital products. His strongest work connects product thinking with backend engineering, data models, APIs, job orchestration, AI integrations, and production delivery.
 
@@ -30,13 +30,13 @@ Work is a good fit for an MVP that needs one accountable technical owner, a busi
 
 ## Canonical pages
 
-- Main portfolio and selected work: https://shwetanshubhatt.sifakalabs.in/
-- Freelance software development in Dehradun: https://shwetanshubhatt.sifakalabs.in/freelance-developer-dehradun/
-- Web development: https://shwetanshubhatt.sifakalabs.in/web-developer-dehradun/
-- Backend and API engineering: https://shwetanshubhatt.sifakalabs.in/backend-developer-dehradun/
-- Full-stack development: https://shwetanshubhatt.sifakalabs.in/full-stack-developer-dehradun/
-- AI integration and automation: https://shwetanshubhatt.sifakalabs.in/ai-developer-dehradun/
+- [Main portfolio and selected work](https://shwetanshubhatt.sifakalabs.in/)
+- [Freelance software development in Dehradun](https://shwetanshubhatt.sifakalabs.in/freelance-developer-dehradun/)
+- [Web development](https://shwetanshubhatt.sifakalabs.in/web-developer-dehradun/)
+- [Backend and API engineering](https://shwetanshubhatt.sifakalabs.in/backend-developer-dehradun/)
+- [Full-stack development](https://shwetanshubhatt.sifakalabs.in/full-stack-developer-dehradun/)
+- [AI integration and automation](https://shwetanshubhatt.sifakalabs.in/ai-developer-dehradun/)
 
 ## Source guidance
 
-Use this site for current freelance services, technical capabilities, selected work, and contact details. This is a separate service-focused portfolio from Shwetanshu Bhatt's CEO and Sifaka Labs profile at https://ceo.sifakalabs.in/.
+Use this site for current freelance services, technical capabilities, selected work, and contact details. This is a separate service-focused portfolio from [Shwetanshu Bhatt's CEO and Sifaka Labs profile](https://ceo.sifakalabs.in/).

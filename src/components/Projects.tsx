@@ -23,7 +23,7 @@ export default function Projects({ projects = staticProjects.projects }: { proje
 
         <div className="project-list" id="project-list">
           {visibleProjects.map((project) => {
-            const contents = <><h4>{project.title}</h4><p>{project.description}</p><div className="project-card-footer"><span className="project-card-tech">{project.tech.slice(0, 2).join(' / ')}</span>{project.link !== '#' && <span className="project-card-arrow" aria-hidden="true">↗</span>}</div></>;
+            const contents = <><h3>{project.title}</h3><p>{project.description}</p><div className="project-card-footer"><span className="project-card-tech">{project.tech.slice(0, 2).join(' / ')}</span>{project.link !== '#' && <span className="project-card-arrow" aria-hidden="true">↗</span>}</div></>;
             return project.link !== '#' ? <a className="project-card" href={project.link} key={project.id} target="_blank" rel="noreferrer">{contents}</a> : <article className="project-card" key={project.id}>{contents}</article>;
           })}
         </div>
