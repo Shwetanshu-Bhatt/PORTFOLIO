@@ -19,6 +19,14 @@
       "stats": []
     },
     {
+      "id": "morrow-dental-clinic",
+      "title": "Morrow Dental Clinic Website Concept",
+      "description": "Clinic-first dental website concept with appointment and WhatsApp enquiry flows, treatment information, and an interactive tooth-care explainer. Clinic and provider details are placeholders for this demo.",
+      "tech": ["Next.js", "React", "TypeScript"],
+      "link": "https://morrow-dental-clinic.vercel.app/",
+      "stats": []
+    },
+    {
       "id": "ai-stock-predictor",
       "title": "Stock Price Forecasting Prototype",
       "description": "Forecasts next-day open and close prices from historical OHLCV data, with feature scaling and MAE/RMSE evaluation.",

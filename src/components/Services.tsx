@@ -31,11 +31,15 @@ export default function Services() {
       <div className="section-inner editorial-grid">
         <div className="section-index" aria-hidden="true">02</div>
         <div>
-          <div className="section-mark">What I can take off your plate</div>
-          <h2 className="section-heading">From the first screen to <em>the last retry.</em></h2>
-          <p className="services-intro">
-            Work directly with an independent software developer in Dehradun. I partner with startups, businesses, and remote teams across India to design, build, and improve dependable digital products.
-          </p>
+          <div className="services-header">
+            <div>
+              <div className="section-mark">What I can take off your plate</div>
+              <h2 className="section-heading">From the first screen to <em>the last retry.</em></h2>
+            </div>
+            <p className="services-intro">
+              Work directly with an independent software developer in Dehradun. I partner with startups, businesses, and remote teams across India to design, build, and improve dependable digital products.
+            </p>
+          </div>
           <div className="service-grid">
             {services.map((service, index) => (
               <article className="service-card" key={service.title}>

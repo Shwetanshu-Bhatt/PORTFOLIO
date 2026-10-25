@@ -20,11 +20,11 @@ export default function Hero({ featuredProject }: { featuredProject?: Project })
       <div className="section-inner field-hero-inner">
         <div className="field-hero-copy">
           <p className="field-kicker"><span>Freelance software engineer</span><i /> Dehradun, India</p>
-          <h1>The work behind your product should <em>just work.</em></h1>
-          <p className="field-intro">I build the web apps, backend systems, and practical AI workflows that turn complicated ideas into dependable products.</p>
+          <h1><span>The work behind</span><span>your product</span><span>should <em>just work.</em></span></h1>
+          <p className="field-intro">Web apps, backend APIs, and practical AI workflows built to work reliably in production.</p>
           <div className="field-actions">
-            <a className="field-button field-button-primary" href="#projects">See the systems I&apos;ve built <span aria-hidden="true">↘</span></a>
-            <a className="field-text-link" href={`mailto:${personal.email}`}>Have a problem to solve? <span aria-hidden="true">↗</span></a>
+            <a className="field-button field-button-primary" href="#projects">View selected work <span aria-hidden="true">↘</span></a>
+            <a className="field-text-link" href={`mailto:${personal.email}`}>Tell me what you&apos;re building <span aria-hidden="true">↗</span></a>
           </div>
           <div className="field-capabilities" aria-label="Areas of work">
             <span>Backend & APIs</span><span>AI workflows</span><span>Web products</span>
